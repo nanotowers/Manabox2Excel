@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colección MTG</title>
+<meta name="description" content="Colección de Magic: The Gathering disponible para intercambio.">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Colección MTG">
+<meta property="og:description" content="Busca por comandante, color o subtipo y arma tu lista de intercambio.">
+<meta property="og:url" content="https://nanotowers.github.io/Manabox2Excel/">
+<meta property="og:image" content="https://nanotowers.github.io/Manabox2Excel/assets/banner.jpg">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" href="assets/favicon.png">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="preload" href="data/meta.json" as="fetch" crossorigin>
+<link rel="preload" href="data/cards.json" as="fetch" crossorigin>
+</head>
+<body>
+
+<header>
+  <img class="hero" id="hero" alt="" hidden>
+  <h1 id="titulo">Cargando colección...</h1>
+  <p id="subtitulo"></p>
+  <div class="stats" id="stats"></div>
+</header>
+
+<main>
+  <div id="loader">
+    <p id="loader-txt">Cargando datos...</p>
+    <div class="bar"><div class="fill" id="loader-fill"></div></div>
+  </div>
+
+  <div id="app" hidden>
+    <div class="panel">
+      <div class="frow">
+        <div class="fgroup" style="flex:1;min-width:280px">
+          <label>Identidad de comandante — muestra solo lo legal en su mazo</label>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <input class="mtxt wide" id="cmd-input" list="cmd-list"
+                   placeholder="Gishath, Atraxa, Muldrotha, Sephiroth...">
+            <datalist id="cmd-list"></datalist>
+            <button class="btn solid" id="cmd-go">Aplicar</button>
+            <button class="btn" id="cmd-clear">Quitar</button>
+          </div>
+          <div id="cmd-status"></div>
+        </div>
+        <div class="fgroup" style="flex:1;min-width:240px">
+          <label>Buscar por nombre o texto de la carta</label>
+          <input class="mtxt wide" id="f-text" placeholder="sacrifice, Sol Ring, draw a card...">
+        </div>
+      </div>
+
+      <div class="frow">
+        <div class="fgroup">
+          <label>Color</label>
+          <div class="pips">
+            <div class="pip pip-W" data-c="W" title="Blanco">W</div>
+            <div class="pip pip-U" data-c="U" title="Azul">U</div>
+            <div class="pip pip-B" data-c="B" title="Negro">B</div>
+            <div class="pip pip-R" data-c="R" title="Rojo">R</div>
+            <div class="pip pip-G" data-c="G" title="Verde">G</div>
+            <div class="pip pip-C" data-c="C" title="Incoloro">C</div>
+          </div>
+        </div>
+        <div class="fgroup">
+          <label>Modo</label>
+          <select class="msel" id="f-cmode">
+            <option value="subset">Legal en esa identidad</option>
+            <option value="any">Contiene alguno</option>
+            <option value="all">Contiene todos</option>
+            <option value="exact">Exactamente esos</option>
+          </select>
+        </div>
+        <div class="fgroup">
+          <label>Cantidad de colores</label>
+          <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+            <button class="chip on" data-cc="todos">Todas</button>
+            <button class="chip" data-cc="mono">Mono</button>
+            <button class="chip" data-cc="multi">Multi</button>
+            <button class="chip" data-cc="incoloro">Incoloras</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="frow" id="frow-3">
+        <div class="fgroup">
+          <label>Tipo</label>
+          <select class="msel" id="f-tipo"><option value="">Todos</option></select>
+        </div>
+        <div class="fgroup">
+          <label>Subtipo</label>
+          <select class="msel" id="f-sub" style="max-width:200px"><option value="">Todos</option></select>
+        </div>
+        <div class="fgroup">
+          <label>o escríbelo</label>
+          <input class="mtxt" id="f-subtxt" placeholder="elf, snake..." style="width:140px">
+        </div>
+        <div class="fgroup">
+          <label>Rareza</label>
+          <select class="msel" id="f-rar">
+            <option value="">Todas</option>
+            <option value="mythic">Mythic</option>
+            <option value="rare">Rare</option>
+            <option value="uncommon">Uncommon</option>
+            <option value="common">Common</option>
+          </select>
+        </div>
+        <div class="fgroup">
+          <label>Edición</label>
+          <select class="msel" id="f-set" style="max-width:170px"><option value="">Todas</option></select>
+        </div>
+        <div class="fgroup" id="g-binder" hidden>
+          <label>Carpeta</label>
+          <select class="msel" id="f-binder"><option value="">Todas</option></select>
+        </div>
+        <div class="fgroup" id="g-cond" hidden>
+          <label>Condición</label>
+          <select class="msel" id="f-cond"><option value="">Todas</option></select>
+        </div>
+        <div class="fgroup" id="g-lang" hidden>
+          <label>Idioma</label>
+          <select class="msel" id="f-lang"><option value="">Todos</option></select>
+        </div>
+        <div class="fgroup">
+          <label>CMC</label>
+          <div style="display:flex;gap:.3rem;align-items:center">
+            <input class="mtxt" id="f-cmin" type="number" min="0" max="20" placeholder="min" style="width:64px">
+            <span style="color:var(--text2)">–</span>
+            <input class="mtxt" id="f-cmax" type="number" min="0" max="20" placeholder="max" style="width:64px">
+          </div>
+        </div>
+        <div class="fgroup">
+          <label>&nbsp;</label>
+          <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+            <button class="chip" id="f-foil">Solo foil</button>
+            <button class="btn" id="f-clear">Limpiar todo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bar2">
+      <div class="count" id="count"></div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <select class="msel" id="f-sort">
+          <option value="name">Nombre A-Z</option>
+          <option value="cmc">CMC</option>
+          <option value="rarity">Rareza</option>
+          <option value="set">Edición</option>
+          <option value="qty">Cantidad</option>
+        </select>
+        <select class="msel" id="f-size">
+          <option value="">Tamaño automático</option>
+          <option value="110">Cartas pequeñas</option>
+          <option value="170">Cartas medianas</option>
+          <option value="240">Cartas grandes</option>
+        </select>
+        <button class="chip on" id="v-grid">Galería</button>
+        <button class="chip" id="v-table">Tabla</button>
+        <button class="btn" id="export-filtro">Exportar lo filtrado</button>
+      </div>
+    </div>
+
+    <div id="viewport"><div id="grid"></div></div>
+    <div id="tablewrap" hidden></div>
+  </div>
+</main>
+
+<div id="tradebar">
+  <div class="info">Lista de intercambio: <b id="pick-count">0</b> cartas</div>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+    <button class="btn" id="pick-view">Ver lista</button>
+    <button class="btn solid" id="pick-copy">Copiar</button>
+    <button class="btn" id="pick-download">Descargar TXT</button>
+    <button class="btn" id="pick-clear">Vaciar</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
+
+<footer>
+  <span id="pie"></span> · Datos de cartas por
+  <a href="https://scryfall.com" target="_blank" rel="noopener" style="color:var(--text2)">Scryfall</a>
+</footer>
+
+<script src="assets/app.js"></script>
+</body>
+</html>

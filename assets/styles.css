@@ -1,0 +1,151 @@
+:root{
+  --bg:#0d0d0d; --surface:#1a1a2e; --surface2:#16213e; --accent:#e94560;
+  --text:#e6e6e6; --text2:#9aa0aa; --border:#2a2a4a; --ok:#2d9d78;
+  --card-w:170px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-serif;padding-bottom:90px}
+
+/* ── Cabecera ── */
+header{background:linear-gradient(135deg,#1a1a2e,#16213e 60%,#0f3460);
+       padding:1.5rem 1rem;border-bottom:1px solid var(--border);text-align:center}
+header .hero{width:100%;max-width:1100px;margin:0 auto .8rem;display:block;
+             border-radius:14px;box-shadow:0 10px 34px rgba(0,0,0,.6)}
+header h1{font-size:1.9rem;color:#fff;margin-bottom:.3rem;text-shadow:0 2px 12px rgba(0,0,0,.8)}
+header p{color:#c9cfd8;font-size:.88rem}
+.stats{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap;margin-top:1rem}
+.stat{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:10px;
+      padding:.45rem 1rem;min-width:104px}
+.stat b{display:block;font-size:1.3rem;color:var(--accent)}
+.stat span{font-size:.66rem;color:var(--text2);text-transform:uppercase;letter-spacing:.05em}
+
+main{max-width:1500px;margin:0 auto;padding:1.25rem}
+
+/* ── Carga progresiva ── */
+#loader{max-width:520px;margin:2.5rem auto;text-align:center}
+#loader .bar{height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:.7rem}
+#loader .fill{height:100%;width:0;background:var(--accent);transition:width .3s}
+#loader p{color:var(--text2);font-size:.85rem}
+.aviso{background:var(--surface);border:1px solid var(--accent);border-radius:10px;
+       padding:1rem;margin:1rem 0;font-size:.85rem;line-height:1.6}
+
+/* ── Panel de filtros ── */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+       padding:1rem;margin-bottom:1rem}
+.frow{display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end}
+.frow+.frow{margin-top:.85rem;padding-top:.85rem;border-top:1px solid var(--border)}
+.fgroup{display:flex;flex-direction:column;gap:.3rem}
+.fgroup label{font-size:.66rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text2)}
+.msel,.mtxt{background:var(--surface2);border:1px solid var(--border);color:var(--text);
+            padding:.42rem .6rem;border-radius:8px;font-size:.8rem;outline:none}
+.msel:focus,.mtxt:focus{border-color:var(--accent)}
+.mtxt.wide{min-width:250px}
+.pips{display:flex;gap:.4rem;align-items:center}
+.pip{width:32px;height:32px;border-radius:50%;cursor:pointer;border:2px solid var(--border);
+     display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;
+     user-select:none;transition:transform .12s}
+.pip:hover{transform:translateY(-2px)}
+.pip.on{border-color:#fff;box-shadow:0 0 0 2px var(--accent)}
+.pip-W{background:#f8f6d8;color:#6b6242}.pip-U{background:#c1d7e9;color:#1f4d68}
+.pip-B{background:#4a4a4a;color:#d9d0d0}.pip-R{background:#e4a08a;color:#7a2f1c}
+.pip-G{background:#a3c095;color:#23502a}.pip-C{background:#cac5c0;color:#4a4a4a}
+.chip{background:var(--surface2);border:1px solid var(--border);color:var(--text2);
+      padding:.35rem .8rem;border-radius:14px;cursor:pointer;font-size:.75rem}
+.chip.on{border-color:var(--accent);background:var(--accent);color:#fff}
+.btn{background:var(--surface2);border:1px solid var(--accent);color:var(--text);
+     padding:.42rem 1rem;border-radius:8px;cursor:pointer;font-size:.78rem;text-decoration:none;
+     display:inline-block}
+.btn:hover{background:var(--accent);color:#fff}
+.btn.solid{background:var(--accent);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+#cmd-status{font-size:.74rem;color:var(--ok);min-height:1em}
+
+.bar2{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;
+      gap:.7rem;margin-bottom:1rem}
+.count{font-size:.82rem;color:var(--text2)}
+.count b{color:var(--accent)}
+
+/* ── Galería virtualizada ── */
+#viewport{position:relative}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--card-w),1fr));gap:.9rem;
+      position:absolute;left:0;right:0}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+      overflow:hidden;position:relative;cursor:pointer;transition:transform .15s,border-color .15s}
+.card:hover{transform:translateY(-4px);border-color:var(--accent)}
+.card.picked{border-color:var(--ok);box-shadow:0 0 0 2px var(--ok)}
+.card img{width:100%;display:block;aspect-ratio:488/680;object-fit:cover;background:#111}
+.noimg{aspect-ratio:488/680;display:flex;flex-direction:column;align-items:center;
+       justify-content:center;padding:.5rem;text-align:center;font-size:.7rem;color:var(--text2)}
+.cfoot{padding:.42rem .55rem;font-size:.72rem}
+.cfoot .nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cfoot .mt{color:var(--text2);font-size:.66rem;margin-top:2px}
+.badge{position:absolute;top:5px;right:5px;background:rgba(0,0,0,.75);border-radius:6px;
+       padding:1px 5px;font-size:.62rem;z-index:2}
+.badge.foil{color:#ffd700}
+.pick{position:absolute;top:5px;left:5px;width:26px;height:26px;border-radius:6px;
+      background:rgba(0,0,0,.7);border:1px solid var(--border);color:#fff;font-size:1rem;
+      display:flex;align-items:center;justify-content:center;z-index:3}
+.card.picked .pick{background:var(--ok);border-color:var(--ok)}
+
+/* ── Tabla ── */
+table{width:100%;border-collapse:collapse;font-size:.8rem}
+th{background:var(--surface2);padding:.5rem;text-align:left;position:sticky;top:0;
+   font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);z-index:5}
+td{padding:.42rem .5rem;border-bottom:1px solid var(--border)}
+tr:hover td{background:var(--surface)}
+tr.picked td{background:rgba(45,157,120,.12)}
+.tname{color:var(--text);font-weight:600;cursor:pointer}
+.tname:hover{color:var(--accent)}
+
+/* ── Barra de intercambio ── */
+#tradebar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);
+          border-top:2px solid var(--ok);padding:.65rem 1.25rem;display:none;
+          justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;z-index:200}
+#tradebar.show{display:flex}
+#tradebar .info{font-size:.85rem}
+#tradebar .info b{color:var(--ok)}
+
+/* ── Modal ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;
+         align-items:center;justify-content:center;z-index:300;padding:1rem}
+.overlay.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+       max-width:980px;width:100%;max-height:92vh;overflow-y:auto;padding:1.5rem;
+       display:flex;gap:1.75rem;flex-wrap:wrap;position:relative}
+.modal img{flex:0 0 380px;width:380px;max-width:100%;border-radius:14px;
+           box-shadow:0 8px 30px rgba(0,0,0,.6)}
+.modal .info{flex:1;min-width:260px}
+.modal h2{color:#fff;margin-bottom:.4rem}
+.modal .ot{white-space:pre-wrap;background:var(--surface2);padding:.8rem;border-radius:8px;
+           font-size:.85rem;line-height:1.5;margin:.8rem 0}
+.kv{display:flex;justify-content:space-between;padding:.26rem 0;
+    border-bottom:1px solid var(--border);font-size:.8rem}
+.kv span:first-child{color:var(--text2)}
+.close{position:absolute;top:.8rem;right:1.2rem;font-size:2rem;color:var(--text2);cursor:pointer}
+.empty{text-align:center;color:var(--text2);padding:3rem 1rem}
+textarea{width:100%;height:220px;background:var(--bg);color:var(--text);border:1px solid var(--border);
+         border-radius:8px;padding:.7rem;font-family:Consolas,monospace;font-size:.8rem}
+
+footer{text-align:center;color:var(--text2);font-size:.72rem;padding:2rem 1rem 1rem}
+
+@media (max-width:900px){
+  :root{--card-w:140px}
+  main{padding:1rem}
+  header h1{font-size:1.4rem}
+  .panel{padding:.75rem}
+  #grid{gap:.6rem}
+}
+@media (max-width:600px){
+  :root{--card-w:120px}
+  main{padding:.6rem}
+  .frow{gap:.6rem}
+  .fgroup{flex:1 1 100%}
+  .fgroup .pips{justify-content:space-between;width:100%}
+  .msel,.mtxt,.mtxt.wide{width:100%;max-width:100%;min-width:0}
+  .cfoot{font-size:.66rem;padding:.35rem .4rem}
+  .stat{padding:.35rem .6rem;min-width:82px}
+  .stat b{font-size:1rem}
+  table{font-size:.72rem}
+  .modal{padding:1rem}
+  .modal img{flex:none;width:100%;max-width:420px;margin:0 auto}
+}
