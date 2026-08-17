@@ -124,7 +124,11 @@ function mana(txt, escapar) {
   return base.replace(RE_SIMBOLO, s => {
     const archivo = META.simbolos[s];
     if (!archivo) return s;
-    return `<img class="ms" src="assets/simbolos/${archivo}" alt="${s}" loading="lazy">`;
+    // Las dimensiones van también en el atributo y en línea: si el CSS no
+    // cargara, un SVG sin tamaño intrínseco se dibujaría a 300x150 px
+    return `<img class="ms" src="assets/simbolos/${archivo}" alt="${s}" ` +
+           `width="16" height="16" style="width:1em;height:1em;` +
+           `vertical-align:-.14em;display:inline-block" loading="lazy">`;
   });
 }
 
