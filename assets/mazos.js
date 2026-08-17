@@ -119,7 +119,9 @@ function verListado() {
           <div class="cfoot" style="padding:.6rem">
             <div class="nm" style="font-size:.9rem">${esc(m.nombre)}</div>
             <div class="mt" style="margin:.35rem 0">${pips(m.ci)}</div>
-            ${m.comandante ? `<div class="mt">${esc(m.comandante)}</div>` : ""}
+            ${m.comandante
+              ? `<div class="mt">${esc(m.comandante)}</div>`
+              : `<div class="mt" style="color:var(--accent)">Comandante sin identificar</div>`}
             <div class="mt" style="margin-top:.3rem">${m.copias} cartas · CMC ${m.cmc_medio}</div>
           </div>
         </div>`).join("") + `</div>`
@@ -148,7 +150,9 @@ function verMazo(m) {
       <div style="flex:1;min-width:220px">
         <h2 style="color:#fff;margin-bottom:.3rem">${esc(m.nombre)}</h2>
         ${m.comandante ? `<div style="color:var(--text2);font-size:.9rem;margin-bottom:.5rem">
-          Comandante: ${esc(m.comandante)}</div>` : ""}
+          Comandante: <b style="color:var(--text)">${esc(m.comandante)}</b></div>` : ""}
+        ${m.aviso ? `<div style="color:var(--accent);font-size:.78rem;margin-bottom:.5rem">
+          ⚠ ${esc(m.aviso)}</div>` : ""}
         <div style="margin-bottom:.6rem">${pips(m.ci)}</div>
         <div class="count"><b>${m.copias}</b> cartas · CMC medio <b>${m.cmc_medio}</b> ·
           ${tipos.map(t => `${t} ${m.tipos[t]}`).join(" · ")}</div>
