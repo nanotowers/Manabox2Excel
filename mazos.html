@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mis mazos Commander</title>
+<meta name="description" content="Mazos de Commander armados.">
+<link rel="icon" href="assets/favicon.png">
+<link rel="stylesheet" href="assets/styles.css?v=202608171944">
+</head>
+<body>
+
+<header>
+  <img class="hero" id="hero" alt="" hidden>
+  <h1 id="titulo">Mis mazos Commander</h1>
+  <p id="subtitulo">Mazos ya armados — estas cartas no están disponibles para intercambio</p>
+  <div class="stats" id="stats"></div>
+  <div style="margin-top:1rem">
+    <a class="btn" href="index.html">← Volver a la colección</a>
+  </div>
+</header>
+
+<main>
+  <div id="loader">
+    <p id="loader-txt">Cargando mazos...</p>
+    <div class="bar"><div class="fill" id="loader-fill"></div></div>
+  </div>
+
+  <!-- Listado de mazos -->
+  <div id="lista-mazos" hidden>
+    <div class="bar2">
+      <div class="count" id="count-mazos"></div>
+      <input class="mtxt" id="buscar-mazo" placeholder="Buscar mazo o comandante...">
+    </div>
+    <div id="mazos-grid"></div>
+  </div>
+
+  <!-- Detalle de un mazo -->
+  <div id="detalle" hidden>
+    <div class="bar2">
+      <button class="btn" id="volver">← Todos los mazos</button>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <select class="msel" id="d-tipo"><option value="">Todos los tipos</option></select>
+        <select class="msel" id="d-sort">
+          <option value="tipo">Por tipo</option>
+          <option value="cmc">Por CMC</option>
+          <option value="name">Por nombre</option>
+        </select>
+        <button class="btn" id="d-export">Exportar lista</button>
+      </div>
+    </div>
+    <div id="d-cabecera"></div>
+    <div id="d-cartas"></div>
+  </div>
+</main>
+
+<div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
+
+<footer>
+  <span id="pie"></span> · Datos de cartas por
+  <a href="https://scryfall.com" target="_blank" rel="noopener" style="color:var(--text2)">Scryfall</a>
+</footer>
+
+<script src="assets/mazos.js?v=202608171944"></script>
+</body>
+</html>

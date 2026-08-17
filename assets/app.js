@@ -54,6 +54,11 @@ async function iniciar() {
     render();
 
     // Tercer tiempo: los textos de reglas, sin bloquear nada
+    // El enlace a los mazos solo aparece si de verdad hay mazos exportados
+    fetch("data/mazos.json", { method: "HEAD" })
+      .then(r => { if (r.ok) $("nav-mazos").hidden = false; })
+      .catch(() => {});
+
     traer("data/oracle.json").then(d => {
       ORACLE = d.oracle || {};
       ORACLE_LISTO = true;
