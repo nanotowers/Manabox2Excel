@@ -86,9 +86,9 @@ function expandir(doc) {
     sn: sets[r[6]] ? sets[r[6]][1] : "",
     cn: r[7], ci: r[8], co: r[9],
     f: r[10], q: r[11],
-    b:  bind[r[12]] ? bind[r[12]][0] : "",
-    cd: cond[r[13]] || "",
-    lg: lang[r[14]] || "",
+    b:  (r[12] || []).map(k => bind[k] ? bind[k][0] : "").filter(Boolean),
+    cd: (r[13] || []).map(k => cond[k] || "").filter(Boolean),
+    lg: (r[14] || []).map(k => lang[k] || "").filter(Boolean),
     sb: (r[15] || []).map(k => subs[k] ? subs[k][0] : "").filter(Boolean),
     t:  tipos[r[16]] || "Other",
     pt: r[17],
@@ -143,7 +143,7 @@ function pintarCabecera() {
   const t = META.totales;
   $("stats").innerHTML = [
     [t.distintas, "Cartas distintas"], [t.copias, "Copias totales"],
-    [t.sets, "Ediciones"], [t.foils, "Foils"], [t.subtipos, "Subtipos"]
+    [t.sets, "Ediciones"], [t.foils, "Foils"], [t.comandantes, "Comandantes"]
   ].map(([v, l]) => `<div class="stat"><b>${v.toLocaleString("es")}</b><span>${l}</span></div>`).join("");
   $("pie").textContent = "Actualizada el " +
     new Date(META.generated_at).toLocaleDateString("es", { day:"numeric", month:"long", year:"numeric" });
@@ -221,9 +221,9 @@ function aplicar() {
     if (sub && !c.sb.some(s => s.toLowerCase().includes(sub))) return false;
     if (rar && c.r !== rar) return false;
     if (set && c.s !== set) return false;
-    if (bind && c.b !== bind) return false;
-    if (cond && c.cd !== cond) return false;
-    if (lang && c.lg !== lang) return false;
+    if (bind && !c.b.includes(bind)) return false;
+    if (cond && !c.cd.includes(cond)) return false;
+    if (lang && !c.lg.includes(lang)) return false;
     if (onlyFoil && !c.f) return false;
     if (c.c !== "" && (c.c < cmin || c.c > cmax)) return false;
     return colorOK(c);
@@ -329,7 +329,7 @@ function dibujarTabla() {
     <td>${c.q}</td><td>${mana(c.mc)}</td><td>${c.c === "" ? "" : c.c}</td>
     <td style="font-size:.72rem">${c.tl}</td>
     <td><span style="color:${RAR_COLOR[c.r] || "#888"}">●</span> ${c.s}</td>
-    <td>${c.cn || ""}</td><td>${c.cd || ""}</td><td>${c.b || ""}</td></tr>`).join("");
+    <td>${c.cn || ""}</td><td>${c.cd.join(", ")}</td><td>${c.b.join(", ")}</td></tr>`).join("");
 
   $("tablewrap").innerHTML = !filtradas.length
     ? `<div class="empty">Ninguna carta coincide con estos filtros.</div>`
@@ -385,8 +385,8 @@ function abrir(i) {
       ${kv("Coste", mana(c.mc))}${kv("CMC", c.c)}${kv("Fuerza/Resistencia", c.pt)}
       ${kv("Identidad de color", c.ci || "Incolora")}${kv("Rareza", c.r)}
       ${kv("Edición", (c.sn || c.s) + (c.cn ? " · #" + c.cn : ""))}
-      ${kv("Copias", c.q)}${kv("Foil", c.f ? "Sí" : "")}${kv("Condición", c.cd)}
-      ${kv("Idioma", c.lg)}${kv("Carpeta", c.b)}
+      ${kv("Copias", c.q)}${kv("Foil", c.f ? "Sí" : "")}${kv("Condición", c.cd.join(", "))}
+      ${kv("Idioma", c.lg.join(", "))}${kv(c.b.length > 1 ? "Carpetas" : "Carpeta", c.b.join(", "))}
       <div style="margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap">
         <button class="btn solid" onclick="togglePick(event,${i});cerrar()">
           ${picked.has(i) ? "Quitar de la lista" : "Añadir a intercambio"}</button>
