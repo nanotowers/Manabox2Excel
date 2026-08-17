@@ -196,6 +196,16 @@ function prepararControles() {
     opciones("f-lang", META.idiomas.map(l => [l, l]), "Todos");
   }
 
+  // Los pips del filtro pasan a ser los símbolos reales de Scryfall.
+  // Si algún símbolo faltara, se queda la letra de siempre.
+  document.querySelectorAll(".pip").forEach(p => {
+    const archivo = META.simbolos && META.simbolos["{" + p.dataset.c + "}"];
+    if (!archivo) return;
+    p.classList.add("svg");
+    p.innerHTML = `<img src="assets/simbolos/${archivo}" alt="${p.dataset.c}" ` +
+                  `width="32" height="32" style="width:100%;height:100%;display:block">`;
+  });
+
   const cmds = Object.keys(META.comandantes);
   $("cmd-list").innerHTML = cmds.map(n => `<option value="${n}">`).join("");
   $("cmd-status").textContent = `${cmds.length} comandantes detectados en esta colección`;

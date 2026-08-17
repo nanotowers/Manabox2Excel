@@ -46,6 +46,10 @@ main{max-width:1500px;margin:0 auto;padding:1.25rem}
      user-select:none;transition:transform .12s}
 .pip:hover{transform:translateY(-2px)}
 .pip.on{border-color:#fff;box-shadow:0 0 0 2px var(--accent)}
+/* Cuando el pip lleva el SVG de Scryfall sobra el círculo de color propio */
+.pip.svg{background:none;border-color:transparent;padding:0;overflow:hidden;
+         box-shadow:0 1px 3px rgba(0,0,0,.5)}
+.pip.svg.on{box-shadow:0 0 0 3px var(--accent)}
 .pip-W{background:#f8f6d8;color:#6b6242}.pip-U{background:#c1d7e9;color:#1f4d68}
 .pip-B{background:#4a4a4a;color:#d9d0d0}.pip-R{background:#e4a08a;color:#7a2f1c}
 .pip-G{background:#a3c095;color:#23502a}.pip-C{background:#cac5c0;color:#4a4a4a}
