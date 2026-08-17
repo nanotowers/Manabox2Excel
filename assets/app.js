@@ -96,6 +96,27 @@ function expandir(doc) {
   }));
 }
 
+/* ── Símbolos de maná ─────────────────────────────────────────────────────
+   Convierte "{4}{U}{U}" en los símbolos redondos de verdad. Los SVG están en
+   assets/simbolos/ y el mapa símbolo→archivo viene en meta.json. Si falta
+   alguno, se deja el texto original: nunca se pierde información. */
+const RE_SIMBOLO = /\{[^}]+\}/g;
+
+function mana(txt, escapar) {
+  if (!txt) return "";
+  const base = escapar ? esc(txt) : txt;
+  if (!META || !META.simbolos) return base;
+  return base.replace(RE_SIMBOLO, s => {
+    const archivo = META.simbolos[s];
+    if (!archivo) return s;
+    return `<img class="ms" src="assets/simbolos/${archivo}" alt="${s}" loading="lazy">`;
+  });
+}
+
+function esc(t) {
+  return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 /* URL de imagen: se deriva del UUID salvo que el generador dejara override */
 function img(c, tam) {
   if (c.ov) return c.ov.replace("/normal/", "/" + tam + "/");
@@ -295,7 +316,7 @@ function tarjeta(c) {
     <div onclick="abrir(${i})">${cuerpo}</div>
     <div class="cfoot" onclick="abrir(${i})">
       <div class="nm">${c.n}</div>
-      <div class="mt">${c.mc || ""} ${c.s ? "· " + c.s : ""}</div>
+      <div class="mt">${mana(c.mc)} ${c.s ? "· " + c.s : ""}</div>
     </div>
   </div>`;
 }
@@ -305,7 +326,7 @@ function dibujarTabla() {
   const filas = tope.map(c => `<tr class="${picked.has(c._i) ? "picked" : ""}">
     <td><button class="chip ${picked.has(c._i) ? "on" : ""}" onclick="togglePick(event,${c._i})">${picked.has(c._i) ? "✓" : "+"}</button></td>
     <td class="tname" onclick="abrir(${c._i})">${c.n}${c.f ? ' <span style="color:#ffd700">✦</span>' : ""}</td>
-    <td>${c.q}</td><td>${c.mc || ""}</td><td>${c.c === "" ? "" : c.c}</td>
+    <td>${c.q}</td><td>${mana(c.mc)}</td><td>${c.c === "" ? "" : c.c}</td>
     <td style="font-size:.72rem">${c.tl}</td>
     <td><span style="color:${RAR_COLOR[c.r] || "#888"}">●</span> ${c.s}</td>
     <td>${c.cn || ""}</td><td>${c.cd || ""}</td><td>${c.b || ""}</td></tr>`).join("");
@@ -360,8 +381,8 @@ function abrir(i) {
     <div class="info">
       <h2>${c.n}</h2>
       <div style="color:var(--text2);font-size:.85rem">${c.tl}</div>
-      ${texto ? `<div class="ot">${texto}</div>` : ""}
-      ${kv("Coste", c.mc)}${kv("CMC", c.c)}${kv("Fuerza/Resistencia", c.pt)}
+      ${texto ? `<div class="ot">${mana(texto, true)}</div>` : ""}
+      ${kv("Coste", mana(c.mc))}${kv("CMC", c.c)}${kv("Fuerza/Resistencia", c.pt)}
       ${kv("Identidad de color", c.ci || "Incolora")}${kv("Rareza", c.r)}
       ${kv("Edición", (c.sn || c.s) + (c.cn ? " · #" + c.cn : ""))}
       ${kv("Copias", c.q)}${kv("Foil", c.f ? "Sí" : "")}${kv("Condición", c.cd)}

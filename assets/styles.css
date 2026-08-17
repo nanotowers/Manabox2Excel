@@ -79,6 +79,12 @@ main{max-width:1500px;margin:0 auto;padding:1.25rem}
 .cfoot{padding:.42rem .55rem;font-size:.72rem}
 .cfoot .nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cfoot .mt{color:var(--text2);font-size:.66rem;margin-top:2px}
+
+/* Símbolos de maná: se escalan con la tipografía que los rodea */
+.ms{width:1em;height:1em;vertical-align:-.14em;margin:0 1px;border-radius:50%;
+    box-shadow:0 1px 2px rgba(0,0,0,.5)}
+.ot .ms{width:.95em;height:.95em}
+.kv .ms{width:1.05em;height:1.05em}
 .badge{position:absolute;top:5px;right:5px;background:rgba(0,0,0,.75);border-radius:6px;
        padding:1px 5px;font-size:.62rem;z-index:2}
 .badge.foil{color:#ffd700}
