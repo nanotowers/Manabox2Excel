@@ -41,6 +41,10 @@ async function iniciar() {
 
     progreso(45, "Cargando cartas...");
     const doc = await traer("data/cards.json");
+    if (doc.schema_version !== META.schema_version) {
+      console.warn("Versiones distintas entre meta.json y cards.json:",
+                   META.schema_version, doc.schema_version);
+    }
     CARDS = expandir(doc);
 
     progreso(100, "Listo");
@@ -68,6 +72,17 @@ async function iniciar() {
   }
 }
 
+/* Un índice suelto o una lista de índices: aceptamos ambos. Así una versión
+   nueva del frontend no revienta con datos generados por un script viejo. */
+function lista(v, dicc, sub) {
+  const arr = Array.isArray(v) ? v : (v === undefined || v === null || v === -1 ? [] : [v]);
+  return arr.map(k => {
+    const e = dicc[k];
+    if (e === undefined) return "";
+    return sub ? (Array.isArray(e) ? e[0] : e) : e;
+  }).filter(Boolean);
+}
+
 /* Reconstruye los objetos a partir del formato columnar */
 function expandir(doc) {
   const { rows, overrides } = doc;
@@ -86,10 +101,10 @@ function expandir(doc) {
     sn: sets[r[6]] ? sets[r[6]][1] : "",
     cn: r[7], ci: r[8], co: r[9],
     f: r[10], q: r[11],
-    b:  (r[12] || []).map(k => bind[k] ? bind[k][0] : "").filter(Boolean),
-    cd: (r[13] || []).map(k => cond[k] || "").filter(Boolean),
-    lg: (r[14] || []).map(k => lang[k] || "").filter(Boolean),
-    sb: (r[15] || []).map(k => subs[k] ? subs[k][0] : "").filter(Boolean),
+    b:  lista(r[12], bind, true),
+    cd: lista(r[13], cond),
+    lg: lista(r[14], lang),
+    sb: lista(r[15], subs, true),
     t:  tipos[r[16]] || "Other",
     pt: r[17],
     ov: overrides[String(i)] || ""
