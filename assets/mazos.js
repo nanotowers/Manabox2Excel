@@ -122,7 +122,8 @@ function verListado() {
             ${m.comandante
               ? `<div class="mt">${esc(m.comandante)}</div>`
               : `<div class="mt" style="color:var(--accent)">Comandante sin identificar</div>`}
-            <div class="mt" style="margin-top:.3rem">${m.copias} cartas · CMC ${m.cmc_medio}</div>
+            <div class="mt" style="margin-top:.3rem">${m.copias} cartas${
+              m.proxies ? ` · ${m.proxies} proxies` : ""} · CMC ${m.cmc_medio}</div>
           </div>
         </div>`).join("") + `</div>`
     : `<div class="empty">Ningún mazo coincide con esa búsqueda.</div>`;
@@ -154,7 +155,9 @@ function verMazo(m) {
         ${m.aviso ? `<div style="color:var(--accent);font-size:.78rem;margin-bottom:.5rem">
           ⚠ ${esc(m.aviso)}</div>` : ""}
         <div style="margin-bottom:.6rem">${pips(m.ci)}</div>
-        <div class="count"><b>${m.copias}</b> cartas · CMC medio <b>${m.cmc_medio}</b> ·
+        <div class="count"><b>${m.copias}</b> cartas${m.proxies
+            ? ` (<b style="color:var(--accent)">${m.proxies} proxies</b>)` : ""} ·
+          CMC medio <b>${m.cmc_medio}</b> ·
           ${tipos.map(t => `${t} ${m.tipos[t]}`).join(" · ")}</div>
       </div>
     </div>`;
@@ -179,7 +182,8 @@ function pintarCartas() {
     `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--card-w),1fr));gap:.9rem">` +
     cartas.map((c,i) => `
       <div class="card" onclick="detalleCarta(${m.lista.indexOf(c)})">
-        ${c.cmd ? `<div class="badge" style="left:5px;right:auto;background:var(--accent)">Comandante</div>` : ""}
+        ${c.cmd ? `<div class="badge" style="left:5px;right:auto;background:var(--accent)">Comandante</div>`
+                : c.px ? `<div class="badge" style="left:5px;right:auto;background:#7a5c00">Proxy</div>` : ""}
         ${c.f ? '<div class="badge foil">✦</div>' : ""}
         ${c.q > 1 ? `<div class="badge" style="top:auto;bottom:44px">×${c.q}</div>` : ""}
         ${c.id ? `<img src="${img(c.id,"normal")}" srcset="${srcset(c.id)}"

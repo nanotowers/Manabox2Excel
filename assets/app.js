@@ -58,6 +58,10 @@ async function iniciar() {
     fetch("data/mazos.json", { method: "HEAD" })
       .then(r => { if (r.ok) $("nav-mazos").hidden = false; })
       .catch(() => {});
+    fetch("data/buscadas.json", { method: "HEAD" })
+      .then(r => { if (r.ok) { $("nav-mazos").hidden = false;
+                               $("link-buscadas").hidden = false; } })
+      .catch(() => {});
 
     traer("data/oracle.json").then(d => {
       ORACLE = d.oracle || {};

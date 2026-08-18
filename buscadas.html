@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cartas que busco</title>
+<meta name="description" content="Lista de cartas que busco para completar mis mazos.">
+<link rel="icon" href="assets/favicon.png">
+<link rel="stylesheet" href="assets/styles.css?v=202608180946">
+</head>
+<body>
+
+<header>
+  <img class="hero" id="hero" alt="" hidden>
+  <h1 id="titulo">Cartas que busco</h1>
+  <p>Si tienes alguna de estas y te interesa algo de mi colección, escríbeme</p>
+  <div class="stats" id="stats"></div>
+  <div style="margin-top:1rem;display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap">
+    <a class="btn" href="index.html">← Colección</a>
+    <a class="btn" href="mazos.html">Mis mazos →</a>
+  </div>
+</header>
+
+<main>
+  <div id="loader">
+    <p id="loader-txt">Cargando lista...</p>
+    <div class="bar"><div class="fill" id="loader-fill"></div></div>
+  </div>
+
+  <div id="app" hidden>
+    <div class="panel">
+      <div class="frow">
+        <div class="fgroup" style="flex:1;min-width:220px">
+          <label>Buscar</label>
+          <input class="mtxt wide" id="f-text" placeholder="Nombre de carta...">
+        </div>
+        <div class="fgroup">
+          <label>Para qué mazo</label>
+          <select class="msel" id="f-mazo"><option value="">Todos</option></select>
+        </div>
+        <div class="fgroup">
+          <label>Motivo</label>
+          <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+            <button class="chip on" data-m="todas">Todas</button>
+            <button class="chip" data-m="proxy">Proxies en mazos</button>
+            <button class="chip" data-m="deseo">Lista de deseos</button>
+            <button class="chip" data-m="notengo">No tengo ninguna</button>
+          </div>
+        </div>
+        <div class="fgroup">
+          <label>&nbsp;</label>
+          <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+            <button class="btn" id="copiar">Copiar lista</button>
+            <button class="btn" id="descargar">Descargar TXT</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bar2">
+      <div class="count" id="count"></div>
+      <select class="msel" id="f-sort">
+        <option value="mazo">Agrupar por mazo</option>
+        <option value="name">Nombre A-Z</option>
+        <option value="cmc">CMC</option>
+      </select>
+    </div>
+
+    <div id="cartas"></div>
+  </div>
+</main>
+
+<div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
+
+<footer>
+  <span id="pie"></span> · Datos de cartas por
+  <a href="https://scryfall.com" target="_blank" rel="noopener" style="color:var(--text2)">Scryfall</a>
+</footer>
+
+<script src="assets/buscadas.js?v=202608180946"></script>
+</body>
+</html>
