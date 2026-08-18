@@ -256,7 +256,8 @@ function tarjeta(c) {
     </div>
     <div class="cfoot">
       <div class="nm">${esc(c.n)}</div>
-      <div class="mt">${mana(c.mc)} · ${c.disp} disponible${c.disp === 1 ? "" : "s"}</div>
+      <div class="mt">${mana(c.mc)} · ${esBasica(c) ? "sin límite"
+        : c.disp + " disponible" + (c.disp === 1 ? "" : "s")}</div>
     </div>
   </div>`;
 }
@@ -271,9 +272,10 @@ function agregar(nombre) {
   const actual = mazo.get(nombre);
 
   if (actual) {
-    // Repetir solo tiene sentido en básicas, y nunca más de las que hay
+    // Repetir solo tiene sentido en básicas. Y las básicas no se limitan por
+    // el inventario: siempre hay de sobra y hacen falta para cerrar el mazo.
     if (!esBasica(c)) { avisar(`${nombre}: en Commander solo se permite una copia.`); return; }
-    if (actual.q >= c.disp) { avisar(`Solo hay ${c.disp} copias de ${nombre} en la colección.`); return; }
+    if (total() >= 100) { avisar("El mazo ya tiene 100 cartas."); return; }
     actual.q++;
   } else {
     if (total() >= 100) { avisar("El mazo ya tiene 100 cartas."); return; }
@@ -312,6 +314,158 @@ function actualizarBarra() {
   $("dk-detalle").textContent =
     `· ${tierras} tierras · CMC medio ${nHech ? (cmc/nHech).toFixed(2) : "0.00"}` +
     (t === 100 ? " · ¡completo!" : ` · faltan ${100 - t}`);
+}
+
+
+/* ── Asistente de tierras básicas ─────────────────────────────────────────
+   Reparte las básicas en proporción a los símbolos de maná que pide el mazo,
+   descontando las fuentes de color que ya aportan las tierras no básicas.
+   Es el mismo criterio que usa cualquier guía de construcción: lo que manda
+   no es cuántas cartas de cada color llevas, sino cuántos pips piden.
+   ------------------------------------------------------------------------ */
+
+const BASICA_DE = { W:"Plains", U:"Island", B:"Swamp", R:"Mountain", G:"Forest" };
+
+function cartaBasica(nombre) {
+  return CARDS.find(c => c.n === nombre && c.tl.includes("Basic Land"))
+      || CARDS.find(c => c.n === nombre)
+      // Si no tuviera ninguna en la colección, la creamos igualmente: las
+      // básicas son ilimitadas y todo el mundo las consigue
+      || { n: nombre, tl: `Basic Land — ${nombre}`, t: "Land", c: 0, mc: "",
+           s: "", cn: "", r: "common", ci: "", sb: [], q: 0, disp: 0,
+           id: "", ov: "", _i: -1 };
+}
+
+function calcularTierras() {
+  const permitidos = (comandante.ci || "").split("").filter(Boolean);
+
+  // Pips de cada color en el mazo, comandante incluido
+  const pips = {}; permitidos.forEach(c => pips[c] = 0);
+  const contar = (mc, q) => (mc || "").match(RE_SIMBOLO)?.forEach(sim =>
+    permitidos.forEach(col => { if (sim.includes(col)) pips[col] += q; }));
+  contar(comandante.mc, 1);
+  [...mazo.values()].forEach(e => { if (e.c.t !== "Land") contar(e.c.mc, e.q); });
+  const totalPips = permitidos.reduce((s,c) => s + pips[c], 0);
+
+  // Cuántas tierras quiere el mazo según su curva
+  const hech = [...mazo.values()].filter(e => e.c.t !== "Land" && e.c.c !== "");
+  const nH = hech.reduce((s,e) => s + e.q, 0);
+  const cmcMedio = nH ? hech.reduce((s,e) => s + e.c.c * e.q, 0) / nH : 3;
+  const objetivo = cmcMedio < 2.5 ? 35 : cmcMedio > 3.5 ? 38 : 37;
+
+  // Lo que ya aportan las tierras no básicas
+  const noBasicas = [...mazo.values()].filter(e => e.c.t === "Land" && !esBasica(e.c));
+  const nNoBasicas = noBasicas.reduce((s,e) => s + e.q, 0);
+  const fuentesFijas = {}; permitidos.forEach(c => fuentesFijas[c] = 0);
+  noBasicas.forEach(e => {
+    const txt = ORACLE_LISTO ? (ORACLE[e.c.n] || "") : "";
+    permitidos.forEach(col => {
+      const basicaCol = BASICA_DE[col];
+      if (e.c.tl.includes(basicaCol) ||
+          /add\s+(?:\w+\s+){0,4}mana of any (?:one )?color/i.test(txt) ||
+          txt.includes("{" + col + "}")) fuentesFijas[col] += e.q;
+    });
+  });
+
+  const basicasActuales = [...mazo.values()]
+    .filter(e => esBasica(e.c)).reduce((s,e) => s + e.q, 0);
+  const otrasCartas = total() - basicasActuales;          // comandante incluido
+  const huecos = Math.max(0, 100 - otrasCartas);
+  const nBasicas = Math.max(0, Math.min(huecos, objetivo - nNoBasicas));
+
+  // Reparto proporcional a los pips, descontando lo que ya cubren las duales
+  const reparto = {};
+  if (!permitidos.length || !totalPips) {
+    reparto["Wastes"] = nBasicas;                          // mazo incoloro
+  } else {
+    const deseado = {}, sinAjustar = {};
+    permitidos.forEach(col => {
+      const cuota = pips[col] / totalPips * (nNoBasicas + nBasicas);
+      sinAjustar[col] = Math.max(0, cuota - fuentesFijas[col]);
+    });
+    const suma = permitidos.reduce((s,c) => s + sinAjustar[c], 0) || 1;
+
+    // Método del resto mayor: reparte los enteros y los sobrantes van a los
+    // colores con mayor fracción pendiente
+    let asignadas = 0;
+    const restos = [];
+    permitidos.forEach(col => {
+      const exacto = sinAjustar[col] / suma * nBasicas;
+      deseado[col] = Math.floor(exacto);
+      asignadas += deseado[col];
+      restos.push([col, exacto - Math.floor(exacto)]);
+    });
+    restos.sort((a,b) => b[1] - a[1]);
+    for (let i = 0; asignadas < nBasicas; i++, asignadas++)
+      deseado[restos[i % restos.length][0]]++;
+
+    permitidos.forEach(col => { if (deseado[col] > 0) reparto[BASICA_DE[col]] = deseado[col]; });
+  }
+
+  return { reparto, nBasicas, objetivo, nNoBasicas, pips, totalPips,
+           cmcMedio, huecos, basicasActuales, permitidos, fuentesFijas };
+}
+
+function proponerTierras() {
+  const r = calcularTierras();
+  const filas = r.permitidos.map(col => {
+    const a = META.simbolos && META.simbolos["{" + col + "}"];
+    const nombre = BASICA_DE[col];
+    return `<tr>
+      <td>${a ? `<img src="assets/simbolos/${a}" alt="${col}" width="18" height="18"
+                      style="width:18px;height:18px">` : col}</td>
+      <td>${nombre}</td>
+      <td>${r.pips[col]}</td>
+      <td>${r.fuentesFijas[col]}</td>
+      <td><b style="color:var(--accent)">${r.reparto[nombre] || 0}</b></td>
+    </tr>`;
+  }).join("");
+
+  const totalReparto = Object.values(r.reparto).reduce((s,v) => s + v, 0);
+
+  $("modal").innerHTML = `<span class="close" onclick="cerrar()">&times;</span>
+    <div class="info" style="flex:1">
+      <h2>Completar la base de tierras</h2>
+      <div class="count" style="margin-bottom:1rem">
+        Reparto calculado según los símbolos de maná que pide tu mazo
+      </div>
+      ${r.permitidos.length ? `
+        <table style="font-size:.85rem;margin-bottom:1rem">
+          <thead><tr><th></th><th>Tierra</th><th>Pips</th><th>Ya cubierto</th><th>Añadir</th></tr></thead>
+          <tbody>${filas}</tbody>
+        </table>`
+      : `<div class="count" style="margin-bottom:1rem">
+           Mazo incoloro: ${r.reparto["Wastes"] || 0} Wastes</div>`}
+
+      <div class="kv"><span>Tierras recomendadas para tu curva</span>
+        <span>${r.objetivo} (CMC medio ${r.cmcMedio.toFixed(2)})</span></div>
+      <div class="kv"><span>Tierras no básicas que ya llevas</span><span>${r.nNoBasicas}</span></div>
+      <div class="kv"><span>Básicas a añadir</span><span>${totalReparto}</span></div>
+      <div class="kv"><span>El mazo quedaría en</span>
+        <span>${total() - r.basicasActuales + totalReparto} / 100</span></div>
+
+      <div class="count" style="margin:.9rem 0">
+        Se reemplazan las básicas que tengas ahora. Las no básicas y los hechizos
+        no se tocan.${ORACLE_LISTO ? "" : " Los textos aún se están cargando, así que las duales podrían no contarse."}
+      </div>
+
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <button class="btn solid" onclick="aplicarTierras()">Aplicar reparto</button>
+        <button class="btn" onclick="cerrar()">Cancelar</button>
+      </div>
+    </div>`;
+  $("overlay").classList.add("show");
+}
+
+function aplicarTierras() {
+  const { reparto } = calcularTierras();
+  [...mazo.keys()].forEach(n => { if (esBasica(mazo.get(n).c)) mazo.delete(n); });
+  Object.entries(reparto).forEach(([nombre, q]) => {
+    if (q > 0) mazo.set(nombre, { c: cartaBasica(nombre), q });
+  });
+  cerrar(); render(); guardar();
+  avisar(`Base de tierras completada: ${Object.entries(reparto)
+    .map(([n,q]) => `${q} ${n}`).join(", ")}`);
 }
 
 /* ── Mazo, exportación y guardado ────────────────────────────────────────── */
@@ -417,6 +571,7 @@ function eventos() {
     $("paso-cmd").hidden = false; guardar();
   });
 
+  $("dk-tierras").addEventListener("click", proponerTierras);
   $("dk-ver").addEventListener("click", verMazo);
   $("dk-txt").addEventListener("click", descargar);
   $("dk-copiar").addEventListener("click", e => copiar(e.target));
