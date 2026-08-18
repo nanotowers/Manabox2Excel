@@ -151,6 +151,20 @@ function verMazo(m) {
   $("d-tipo").innerHTML = `<option value="">Todos los tipos</option>` +
     tipos.map(t => `<option value="${t}">${t} (${m.tipos[t]})</option>`).join("");
 
+  const g = m.guia || {};
+  const tieneGuia = !!(g.texto || g.audio || (g.imagenes || []).length);
+  $("d-tabs").innerHTML = `
+    <button class="chip on" id="tab-mazo">Mazo</button>
+    <button class="chip" id="tab-guia">Guía${tieneGuia ? "" : " (vacía)"}</button>`;
+  $("tab-mazo").onclick = () => {
+    $("tab-mazo").classList.add("on"); $("tab-guia").classList.remove("on");
+    $("d-filtros").hidden = false; pintarCartas();
+  };
+  $("tab-guia").onclick = () => {
+    $("tab-guia").classList.add("on"); $("tab-mazo").classList.remove("on");
+    $("d-filtros").hidden = true; verGuia(m);
+  };
+
   $("d-cabecera").innerHTML = `
     <div class="panel" style="display:flex;gap:1.25rem;flex-wrap:wrap;align-items:center">
       ${m.portada ? `<img src="${img(m.portada,"normal")}" alt="" style="width:150px;border-radius:10px">` : ""}
@@ -200,10 +214,10 @@ function pintarCartas() {
           <span class="count">${grupos[t].reduce((s,c)=>s+c.q,0)}</span>
         </div>
         ${rejilla(grupos[t])}
-      </div>`).join("") + panelEstadisticas(m);
+      </div>`).join("") + panelMetricas(m) + panelEstadisticas(m);
   } else {
     cartas.sort(sorts[orden] || sorts.name);
-    $("d-cartas").innerHTML = rejilla(cartas) + panelEstadisticas(m);
+    $("d-cartas").innerHTML = rejilla(cartas) + panelMetricas(m) + panelEstadisticas(m);
   }
 }
 
@@ -256,6 +270,172 @@ function estadisticas(m) {
 
   return { curva, tipos, simbolos, tierras,
            cmcMedio: conCmc ? (sumaCmc / conCmc) : 0, conCmc };
+}
+
+
+/* ── Métricas de salud del mazo ───────────────────────────────────────────
+   Tres indicadores que responden preguntas reales, en vez de contar cartas:
+     1. Fuentes por color frente a los símbolos que pide la curva
+     2. Probabilidad de mano jugable (distribución hipergeométrica)
+     3. Dependencia del comandante: cuánto se cae el mazo si te lo matan
+   ------------------------------------------------------------------------ */
+
+const TIPOS_BASICA = { Plains:"W", Island:"U", Swamp:"B", Mountain:"R", Forest:"G" };
+
+/* Combinatoria en logaritmos: con mazos de 100 cartas los factoriales se
+   desbordan enseguida y las probabilidades salen mal. */
+function logFact(n) {
+  let r = 0;
+  for (let i = 2; i <= n; i++) r += Math.log(i);
+  return r;
+}
+const logComb = (n, k) => (k < 0 || k > n) ? -Infinity
+  : logFact(n) - logFact(k) - logFact(n - k);
+
+/* P(exactamente k éxitos al robar n cartas de un mazo de N con K éxitos) */
+function hiper(N, K, n, k) {
+  const l = logComb(K, k) + logComb(N - K, n - k) - logComb(N, n);
+  return isFinite(l) ? Math.exp(l) : 0;
+}
+function pEntre(N, K, n, kmin, kmax) {
+  let p = 0;
+  for (let k = kmin; k <= Math.min(kmax, n, K); k++) p += hiper(N, K, n, k);
+  return p;
+}
+const pAlMenos = (N, K, n, kmin) => pEntre(N, K, n, kmin, n);
+
+/* Fuentes de maná de cada color: tierras básicas por su subtipo, y cualquier
+   carta cuyo texto añada ese color (duales, rocas, criaturas de maná). */
+function fuentesPorColor(m) {
+  const f = { W:0, U:0, B:0, R:0, G:0 };
+  m.lista.forEach(c => {
+    const q = c.q || 1;
+    const colores = new Set();
+
+    Object.keys(TIPOS_BASICA).forEach(sub => {
+      if ((c.tl || "").includes(sub)) colores.add(TIPOS_BASICA[sub]);
+    });
+
+    const txt = (ORACLE_LISTO && ORACLE[c.n]) ? ORACLE[c.n] : "";
+    if (txt) {
+      // Exigimos que "any color" venga detrás de "add": si no, se colaría
+      // texto como "protection from any color", que no produce maná
+      if (/add\s+(?:\w+\s+){0,4}mana of any (?:one )?color/i.test(txt))
+        "WUBRG".split("").forEach(x => colores.add(x));
+      const añade = txt.match(/add\s+((?:\{[^}]+\}|\s|or)+)/gi) || [];
+      añade.forEach(frag => "WUBRG".split("").forEach(x => {
+        if (frag.includes("{" + x + "}") || frag.includes("/" + x + "}")) colores.add(x);
+      }));
+    }
+    colores.forEach(x => { if (f[x] !== undefined) f[x] += q; });
+  });
+  return f;
+}
+
+/* Cartas que solo funcionan con el comandante en mesa: mencionan su nombre o
+   dependen del "commander" genérico. Es el punto único de fallo del mazo. */
+function dependenciaComandante(m) {
+  if (!ORACLE_LISTO || !m.comandante) return null;
+  const nombres = m.comandante.split(" + ").map(n => n.split(",")[0].trim().toLowerCase());
+  let dependientes = 0, total = 0;
+  const ejemplos = [];
+  m.lista.forEach(c => {
+    if (c.cmd) return;
+    total += c.q || 1;
+    const txt = (ORACLE[c.n] || "").toLowerCase();
+    if (!txt) return;
+    const menciona = nombres.some(n => n && txt.includes(n));
+    const generico = /your commander|commander creature|commander you control|commander's/.test(txt);
+    if (menciona || generico) {
+      dependientes += c.q || 1;
+      if (ejemplos.length < 8) ejemplos.push(c.n);
+    }
+  });
+  return { dependientes, total, pct: total ? dependientes / total * 100 : 0, ejemplos };
+}
+
+function panelMetricas(m) {
+  const e = estadisticas(m);
+  const total = m.copias || m.lista.reduce((s,c) => s + c.q, 0);
+  const tierras = e.tierras;
+
+  // 1. Mano jugable: 3 a 5 tierras en las 7 iniciales
+  const pJugable = pEntre(total, tierras, 7, 3, 5) * 100;
+  const pSinTierra = pEntre(total, tierras, 7, 0, 1) * 100;
+  const pInundada = pAlMenos(total, tierras, 7, 6) * 100;
+
+  const semaforo = v => v >= 85 ? "var(--ok)" : v >= 70 ? "#d4a017" : "var(--accent)";
+
+  const f = fuentesPorColor(m);
+  const filasColor = "WUBRG".split("").filter(c => e.simbolos[c] || f[c]).map(c => {
+    const arch = META.simbolos && META.simbolos["{" + c + "}"];
+    // Probabilidad de tener al menos una fuente de ese color en el turno 3
+    const pT3 = pAlMenos(total, f[c], 9, 1) * 100;
+    return `<tr>
+      <td>${arch ? `<img src="assets/simbolos/${arch}" alt="${c}" width="18" height="18"
+                        style="width:18px;height:18px">` : c}</td>
+      <td><b>${f[c]}</b></td>
+      <td>${e.simbolos[c] || 0}</td>
+      <td style="color:${semaforo(pT3)}">${pT3.toFixed(0)}%</td>
+    </tr>`;
+  }).join("");
+
+  const dep = dependenciaComandante(m);
+
+  return `
+  <div class="panel" style="margin-top:1.25rem">
+    <h3 style="color:#fff;margin-bottom:.4rem">Salud del mazo</h3>
+    <div class="count" style="margin-bottom:1rem">
+      Indicadores calculados sobre las ${total} cartas del mazo
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:1.75rem">
+
+      <div>
+        <div class="fgroup"><label>Mano inicial</label></div>
+        <div style="font-size:2.4rem;font-weight:700;color:${semaforo(pJugable)};line-height:1.1">
+          ${pJugable.toFixed(1)}%
+        </div>
+        <div class="count" style="margin-bottom:.7rem">manos jugables (3-5 tierras de 7)</div>
+        <div class="kv"><span>Riesgo de mano seca (0-1 tierras)</span><span>${pSinTierra.toFixed(1)}%</span></div>
+        <div class="kv"><span>Riesgo de inundación (6+ tierras)</span><span>${pInundada.toFixed(1)}%</span></div>
+        <div class="kv"><span>Tierras en el mazo</span><span>${tierras} de ${total}</span></div>
+        <div class="count" style="margin-top:.6rem">Por encima del 85% se considera sano</div>
+      </div>
+
+      <div>
+        <div class="fgroup" style="margin-bottom:.5rem"><label>Fuentes por color</label></div>
+        <table style="font-size:.8rem">
+          <thead><tr><th></th><th>Fuentes</th><th>Pips</th><th>Turno 3</th></tr></thead>
+          <tbody>${filasColor || '<tr><td colspan="4">Mazo incoloro</td></tr>'}</tbody>
+        </table>
+        <div class="count" style="margin-top:.6rem">
+          "Turno 3" es la probabilidad de tener al menos una fuente de ese color
+          habiendo visto 9 cartas${ORACLE_LISTO ? "" : " · cargando textos..."}
+        </div>
+      </div>
+
+      <div>
+        <div class="fgroup" style="margin-bottom:.5rem"><label>Dependencia del comandante</label></div>
+        ${dep ? `
+          <div style="font-size:2.4rem;font-weight:700;line-height:1.1;
+                      color:${dep.pct > 35 ? "var(--accent)" : dep.pct > 20 ? "#d4a017" : "var(--ok)"}">
+            ${dep.pct.toFixed(0)}%
+          </div>
+          <div class="count" style="margin-bottom:.7rem">
+            ${dep.dependientes} de ${dep.total} cartas lo necesitan en mesa
+          </div>
+          ${dep.ejemplos.length ? `<div class="count" style="line-height:1.6">
+            ${dep.ejemplos.map(esc).join(" · ")}${dep.dependientes > dep.ejemplos.length ? "…" : ""}
+          </div>` : ""}
+          <div class="count" style="margin-top:.6rem">
+            Cuanto más alta, más protección conviene llevar
+          </div>`
+        : `<div class="count">Necesita los textos de las cartas${
+             m.comandante ? " (cargando...)" : " y un comandante identificado"}</div>`}
+      </div>
+
+    </div>
+  </div>`;
 }
 
 function panelEstadisticas(m) {
@@ -355,6 +535,116 @@ function detalleCarta(i) {
 }
 const cerrar = () => $("overlay").classList.remove("show");
 
+
+/* ── Guía del mazo ───────────────────────────────────────────────────────
+   Material de apoyo en ColeccionWeb/guias/: texto en markdown, un podcast
+   y las infografías que quieras. Se detectan por el slug del mazo. */
+
+function md(texto) {
+  const lineas = esc(texto).split("\n");
+  let html = "", enLista = false;
+  const inline = t => t
+    .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")
+    .replace(/(^|[^*])\*([^*]+?)\*/g, "$1<i>$2</i>")
+    .replace(/`(.+?)`/g, "<code>$1</code>")
+    .replace(/\[(.+?)\]\((https?:[^)]+)\)/g,
+             '<a href="$2" target="_blank" rel="noopener" style="color:var(--accent)">$1</a>');
+
+  for (let l of lineas) {
+    l = l.trimEnd();
+    const li = l.match(/^\s*[-*+]\s+(.*)$/);
+    if (li) {
+      if (!enLista) { html += "<ul style='margin:.4rem 0 .8rem 1.2rem'>"; enLista = true; }
+      html += `<li style="margin:.2rem 0">${inline(li[1])}</li>`;
+      continue;
+    }
+    if (enLista) { html += "</ul>"; enLista = false; }
+
+    const h = l.match(/^(#{1,4})\s+(.*)$/);
+    if (h) {
+      const n = h[1].length;
+      const tam = [1.5, 1.25, 1.05, .95][n - 1];
+      html += `<h${n} style="color:#fff;font-size:${tam}rem;margin:1.2rem 0 .5rem">${inline(h[2])}</h${n}>`;
+    } else if (!l.trim()) {
+      html += "";
+    } else if (/^\s*(-{3,}|\*{3,})\s*$/.test(l)) {
+      html += `<hr style="border:none;border-top:1px solid var(--border);margin:1rem 0">`;
+    } else {
+      html += `<p style="margin:.5rem 0;line-height:1.65">${inline(l)}</p>`;
+    }
+  }
+  if (enLista) html += "</ul>";
+  return html;
+}
+
+async function verGuia(m) {
+  const g = m.guia || {};
+  let texto = "";
+  if (g.texto) {
+    try {
+      const r = await fetch(g.texto, { cache: "no-cache" });
+      if (r.ok) texto = await r.text();
+    } catch {}
+  }
+  $("d-cartas").innerHTML = `
+    <div class="panel">
+      ${g.audio ? `
+        <div style="margin-bottom:1.5rem">
+          <div class="fgroup" style="margin-bottom:.5rem"><label>Podcast del mazo</label></div>
+          <audio controls preload="none" style="width:100%">
+            <source src="${g.audio}">
+          </audio>
+        </div>` : ""}
+      ${texto ? `<div style="max-width:820px">${md(texto)}</div>` : ""}
+      ${(g.imagenes || []).length ? `
+        <div style="margin-top:1.5rem">
+          <div class="fgroup" style="margin-bottom:.6rem"><label>Infografías</label></div>
+          ${g.imagenes.map(src => `
+            <img src="${src}" alt="Infografía" loading="lazy"
+                 onclick="window.open('${src}','_blank')"
+                 style="width:100%;max-width:900px;border-radius:12px;margin-bottom:1rem;
+                        cursor:zoom-in;display:block">`).join("")}
+        </div>` : ""}
+      ${!texto && !g.audio && !(g.imagenes || []).length
+        ? `<div class="empty">
+             Este mazo aún no tiene guía.<br><br>
+             Añade archivos a <code>guias/</code> con el nombre <code>${m.slug}</code>:
+             <code>${m.slug}.md</code> para el texto,
+             <code>${m.slug}.mp3</code> para el podcast,
+             <code>${m.slug}-1.png</code> para las infografías.
+           </div>` : ""}
+    </div>`;
+}
+
+/* ── Exportación en CSV con todo el detalle, para dárselo a una IA ──────── */
+
+function csvMazo(m) {
+  const cols = ["is_commander","proxy","qty","name","foil","mana_cost","cmc","type_line",
+                "oracle_text","power_toughness","color_identity","rarity","set_code",
+                "collector_number","card_type"];
+  const escapa = v => {
+    const t = (v === null || v === undefined) ? "" : String(v);
+    return /[",\n;]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+  };
+  const filas = m.lista.map(c => [
+    c.cmd ? "YES" : "", c.px ? "YES" : "", c.q, c.n, c.f ? "FOIL" : "",
+    c.mc, (c.c ?? ""), c.tl,
+    (ORACLE_LISTO ? (ORACLE[c.n] || "") : "").replace(/\r?\n/g, " / "),
+    c.pt, c.ci, c.r, c.s, c.cn, c.t
+  ].map(escapa).join(","));
+
+  const cabecera = [
+    `# Mazo: ${m.nombre}`,
+    `# Comandante: ${m.comandante || "sin identificar"}`,
+    `# Identidad de color: ${m.ci || "incolora"}`,
+    `# Cartas: ${m.copias} (${m.proxies || 0} proxies)`,
+    `# CMC medio: ${m.cmc_medio}`,
+    `# Generado: ${new Date().toISOString().slice(0,10)}`,
+  ].join("\n");
+
+  return cabecera + "\n" + cols.join(",") + "\n" + filas.join("\n");
+}
+
 /* ── Navegación por hash ─────────────────────────────────────────────────── */
 
 function ruta() {
@@ -369,13 +659,27 @@ function eventos() {
   $("buscar-mazo").addEventListener("input", verListado);
   $("d-tipo").addEventListener("change", pintarCartas);
   $("d-sort").addEventListener("change", pintarCartas);
+  const bajar = (contenido, nombre, tipo) => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([contenido], { type: tipo }));
+    a.download = nombre; a.click(); URL.revokeObjectURL(a.href);
+  };
+
   $("d-export").addEventListener("click", () => {
     if (!actual) return;
-    const txt = actual.lista.map(c =>
-      `${c.q} ${c.n}${c.s ? ` (${c.s})` : ""}${c.cn ? ` ${c.cn}` : ""}${c.f ? " *F*" : ""}`).join("\n");
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([txt], { type:"text/plain" }));
-    a.download = actual.slug + ".txt"; a.click(); URL.revokeObjectURL(a.href);
+    bajar(actual.lista.map(c =>
+      `${c.q} ${c.n}${c.s ? ` (${c.s})` : ""}${c.cn ? ` ${c.cn}` : ""}${c.f ? " *F*" : ""}`).join("\n"),
+      actual.slug + ".txt", "text/plain");
+  });
+
+  $("d-csv").addEventListener("click", () => {
+    if (!actual) return;
+    if (!ORACLE_LISTO) {
+      alert("Los textos de las cartas todavía se están cargando. Prueba en unos segundos.");
+      return;
+    }
+    // BOM para que Excel respete los acentos al abrirlo
+    bajar("\ufeff" + csvMazo(actual), actual.slug + "_completo.csv", "text/csv;charset=utf-8");
   });
   $("overlay").addEventListener("click", e => { if (e.target.id === "overlay") cerrar(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape") cerrar(); });

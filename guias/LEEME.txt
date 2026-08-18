@@ -1,0 +1,16 @@
+GUÍAS DE MAZO
+=============
+Pon aquí el material de apoyo. Los archivos se detectan por el "slug" del mazo,
+que es el nombre del binder sin el prefijo EDH, en minúsculas y con guiones.
+
+  EDH - Sephiroth        -> slug: sephiroth
+  EDH - Arden/Akiri      -> slug: arden-akiri
+
+Archivos reconocidos:
+
+  sephiroth.md           Texto de la guía (markdown: #, **negrita**, - listas, [enlaces](url))
+  sephiroth.mp3          Podcast (también .m4a, .ogg, .wav)
+  sephiroth-1.png        Infografía. Varias: -1, -2, -3... (.png .jpg .webp .gif)
+
+No hay que configurar nada más: al regenerar, el script los detecta y aparecen
+en la pestaña "Guía" de cada mazo.
