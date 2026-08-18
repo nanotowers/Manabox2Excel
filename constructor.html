@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Constructor de mazos</title>
+<meta name="description" content="Arma un mazo de Commander con las cartas de esta colección.">
+<link rel="icon" href="assets/favicon.png">
+<link rel="stylesheet" href="assets/styles.css?v=202608181714">
+</head>
+<body>
+
+<header>
+  <img class="hero" id="hero" alt="" hidden>
+  <h1 id="titulo">Constructor de mazos</h1>
+  <p>Arma un mazo de Commander con las cartas disponibles y mándamelo</p>
+  <div style="margin-top:1rem;display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap">
+    <a class="btn" href="index.html">← Colección</a>
+    <a class="btn" href="mazos.html">Mis mazos</a>
+    <a class="btn" href="buscadas.html">Cartas que busco</a>
+  </div>
+</header>
+
+<main>
+  <div id="loader">
+    <p id="loader-txt">Cargando colección...</p>
+    <div class="bar"><div class="fill" id="loader-fill"></div></div>
+  </div>
+
+  <!-- Paso 1: comandante -->
+  <div id="paso-cmd" hidden>
+    <div class="panel">
+      <div class="frow">
+        <div class="fgroup" style="flex:1;min-width:280px">
+          <label>1. Elige tu comandante</label>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <input class="mtxt wide" id="cmd-input" list="cmd-list"
+                   placeholder="Escribe el nombre de una legendaria...">
+            <datalist id="cmd-list"></datalist>
+            <button class="btn solid" id="cmd-go">Empezar</button>
+          </div>
+          <div id="cmd-status" style="font-size:.78rem;color:var(--text2);margin-top:.4rem"></div>
+        </div>
+      </div>
+    </div>
+    <div class="count" style="margin-bottom:.8rem">Comandantes disponibles en la colección</div>
+    <div id="cmd-grid"></div>
+  </div>
+
+  <!-- Paso 2: construcción -->
+  <div id="paso-build" hidden>
+    <div class="panel" id="cmd-cabecera"></div>
+
+    <div class="panel">
+      <div class="frow">
+        <div class="fgroup" style="flex:1;min-width:200px">
+          <label>Buscar</label>
+          <input class="mtxt wide" id="f-text" placeholder="Nombre o texto de la carta...">
+        </div>
+        <div class="fgroup">
+          <label>Tipo</label>
+          <select class="msel" id="f-tipo"><option value="">Todos</option></select>
+        </div>
+        <div class="fgroup">
+          <label>Subtipo</label>
+          <select class="msel" id="f-sub" style="max-width:180px"><option value="">Todos</option></select>
+        </div>
+        <div class="fgroup">
+          <label>CMC</label>
+          <div style="display:flex;gap:.3rem;align-items:center">
+            <input class="mtxt" id="f-cmin" type="number" min="0" max="20" placeholder="min" style="width:62px">
+            <span style="color:var(--text2)">–</span>
+            <input class="mtxt" id="f-cmax" type="number" min="0" max="20" placeholder="max" style="width:62px">
+          </div>
+        </div>
+        <div class="fgroup">
+          <label>Orden</label>
+          <select class="msel" id="f-sort">
+            <option value="name">Nombre</option>
+            <option value="cmc">CMC</option>
+            <option value="rarity">Rareza</option>
+          </select>
+        </div>
+        <div class="fgroup">
+          <label>&nbsp;</label>
+          <button class="btn" id="cambiar-cmd">Cambiar comandante</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="bar2">
+      <div class="count" id="count"></div>
+      <div class="count" id="aviso-legal"></div>
+    </div>
+
+    <div id="viewport"><div id="grid"></div></div>
+  </div>
+</main>
+
+<!-- Panel del mazo -->
+<div id="deckbar" hidden>
+  <div class="dk-head">
+    <div>
+      <b id="dk-total">0</b> / 100 cartas
+      <span id="dk-detalle" class="count"></span>
+    </div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <button class="btn" id="dk-ver">Ver mazo</button>
+      <button class="btn" id="dk-txt">Descargar</button>
+      <button class="btn solid" id="dk-copiar">Copiar lista</button>
+      <button class="btn" id="dk-vaciar">Vaciar</button>
+    </div>
+  </div>
+  <div class="dk-barra"><div class="dk-fill" id="dk-fill"></div></div>
+</div>
+
+<div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
+
+<footer>
+  <span id="pie"></span> · Datos de cartas por
+  <a href="https://scryfall.com" target="_blank" rel="noopener" style="color:var(--text2)">Scryfall</a>
+</footer>
+
+<script src="assets/constructor.js?v=202608181714"></script>
+</body>
+</html>

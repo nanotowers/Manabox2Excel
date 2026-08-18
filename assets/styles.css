@@ -115,6 +115,19 @@ tr.picked td{background:rgba(45,157,120,.12)}
 #tradebar .info{font-size:.85rem}
 #tradebar .info b{color:var(--ok)}
 
+/* ── Barra del constructor ── */
+#deckbar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);
+         border-top:2px solid var(--accent);z-index:200}
+#deckbar .dk-head{display:flex;justify-content:space-between;align-items:center;
+                  gap:1rem;flex-wrap:wrap;padding:.65rem 1.25rem}
+#deckbar b{color:var(--accent);font-size:1.15rem}
+#deckbar .dk-barra{height:4px;background:var(--surface2)}
+#deckbar .dk-fill{height:100%;width:0;background:var(--accent);transition:width .25s}
+@media (max-width:600px){
+  #deckbar .dk-head{padding:.5rem .7rem;font-size:.82rem}
+  #deckbar .btn{padding:.35rem .7rem;font-size:.72rem}
+}
+
 /* ── Modal ── */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;
          align-items:center;justify-content:center;z-index:300;padding:1rem}
