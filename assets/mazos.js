@@ -9,8 +9,14 @@
 const $ = id => document.getElementById(id);
 const RAR_COLOR = { common:"#aaa", uncommon:"#8ab4f8", rare:"#ffd700",
                     mythic:"#ff8c00", special:"#9b59b6", bonus:"#3498db" };
-const ORDEN_TIPOS = ["Commander","Creature","Instant","Sorcery","Enchantment",
-                     "Artifact","Planeswalker","Land","Other"];
+const ORDEN_TIPOS = ["Commander","Planeswalker","Creature","Enchantment",
+                     "Artifact","Instant","Sorcery","Land","Other"];
+const COLOR_TIPO = {
+  Commander:"#e94560", Planeswalker:"#b5451b", Creature:"#16213e",
+  Enchantment:"#2d6a4f", Artifact:"#4a4e69", Instant:"#0f3460",
+  Sorcery:"#533483", Land:"#6b4226", Other:"#3d3d3d"
+};
+const COLOR_MANA = { W:"#f8f6d8", U:"#c1d7e9", B:"#6b6b6b", R:"#e4a08a", G:"#a3c095", C:"#cac5c0" };
 
 let META = null, MAZOS = [], ORACLE = null, ORACLE_LISTO = false;
 let actual = null;
@@ -171,29 +177,158 @@ function pintarCartas() {
   let cartas = m.lista.filter(c => !tipo || c.t === tipo);
 
   const sorts = {
-    tipo: (a,b) => (b.cmd - a.cmd) || ORDEN_TIPOS.indexOf(a.t) - ORDEN_TIPOS.indexOf(b.t)
-                   || a.n.localeCompare(b.n),
     cmc:  (a,b) => (a.c ?? 99) - (b.c ?? 99) || a.n.localeCompare(b.n),
     name: (a,b) => a.n.localeCompare(b.n),
   };
-  cartas.sort(sorts[orden] || sorts.tipo);
 
-  $("d-cartas").innerHTML =
-    `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--card-w),1fr));gap:.9rem">` +
-    cartas.map((c,i) => `
-      <div class="card" onclick="detalleCarta(${m.lista.indexOf(c)})">
-        ${c.cmd ? `<div class="badge" style="left:5px;right:auto;background:var(--accent)">Comandante</div>`
-                : c.px ? `<div class="badge" style="left:5px;right:auto;background:#7a5c00">Proxy</div>` : ""}
-        ${c.f ? '<div class="badge foil">✦</div>' : ""}
-        ${c.q > 1 ? `<div class="badge" style="top:auto;bottom:44px">×${c.q}</div>` : ""}
-        ${c.id ? `<img src="${img(c.id,"normal")}" srcset="${srcset(c.id)}"
-                       sizes="(max-width:600px) 46vw, 210px" alt="${esc(c.n)}" loading="lazy">`
-               : `<div class="noimg"><div style="font-size:1.5rem">🃏</div><div>${esc(c.n)}</div></div>`}
-        <div class="cfoot">
-          <div class="nm">${esc(c.n)}</div>
-          <div class="mt">${mana(c.mc)} ${c.s ? "· " + c.s : ""}</div>
+  if (orden === "tipo") {
+    // El comandante va aparte, arriba del todo; el resto por grupos
+    const grupos = {};
+    cartas.forEach(c => {
+      const k = c.cmd ? "Commander" : c.t;
+      (grupos[k] = grupos[k] || []).push(c);
+    });
+    Object.values(grupos).forEach(g => g.sort((a,b) =>
+      (a.c ?? 99) - (b.c ?? 99) || a.n.localeCompare(b.n)));
+
+    $("d-cartas").innerHTML = ORDEN_TIPOS.filter(t => grupos[t]).map(t => `
+      <div style="margin-bottom:1.6rem">
+        <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.7rem;
+                    padding:.5rem .8rem;border-radius:8px;
+                    background:${COLOR_TIPO[t]}33;border-left:4px solid ${COLOR_TIPO[t]}">
+          <h3 style="color:#fff;font-size:1rem">${t === "Commander" ? "Comandante" : t}</h3>
+          <span class="count">${grupos[t].reduce((s,c)=>s+c.q,0)}</span>
         </div>
-      </div>`).join("") + `</div>`;
+        ${rejilla(grupos[t])}
+      </div>`).join("") + panelEstadisticas(m);
+  } else {
+    cartas.sort(sorts[orden] || sorts.name);
+    $("d-cartas").innerHTML = rejilla(cartas) + panelEstadisticas(m);
+  }
+}
+
+const rejilla = arr =>
+  `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--card-w),1fr));gap:.9rem">` +
+  arr.map(tarjetaCarta).join("") + `</div>`;
+
+function tarjetaCarta(c) {
+  const i = actual.lista.indexOf(c);
+  return `<div class="card" onclick="detalleCarta(${i})">
+    ${c.cmd ? `<div class="badge" style="left:5px;right:auto;background:var(--accent)">Comandante</div>`
+            : c.px ? `<div class="badge" style="left:5px;right:auto;background:#7a5c00">Proxy</div>` : ""}
+    ${c.f ? '<div class="badge foil">✦</div>' : ""}
+    ${c.q > 1 ? `<div class="badge" style="top:auto;bottom:44px">×${c.q}</div>` : ""}
+    ${c.id ? `<img src="${img(c.id,"normal")}" srcset="${srcset(c.id)}"
+                   sizes="(max-width:600px) 46vw, 210px" alt="${esc(c.n)}" loading="lazy">`
+           : `<div class="noimg"><div style="font-size:1.5rem">🃏</div><div>${esc(c.n)}</div></div>`}
+    <div class="cfoot">
+      <div class="nm">${esc(c.n)}</div>
+      <div class="mt">${mana(c.mc)} ${c.s ? "· " + c.s : ""}</div>
+    </div>
+  </div>`;
+}
+
+/* ── Estadísticas del mazo ───────────────────────────────────────────────── */
+
+function estadisticas(m) {
+  const curva = {}, tipos = {}, simbolos = {};
+  let tierras = 0, sumaCmc = 0, conCmc = 0;
+
+  m.lista.forEach(c => {
+    const q = c.q || 1;
+    tipos[c.t] = (tipos[c.t] || 0) + q;
+
+    if (c.t === "Land") { tierras += q; }
+    else if (c.c !== null && c.c !== undefined && c.c !== "") {
+      const k = Math.min(7, Math.floor(c.c));   // 7 agrupa "7 o más"
+      curva[k] = (curva[k] || 0) + q;
+      sumaCmc += c.c * q; conCmc += q;
+    }
+
+    // Cuenta de símbolos de color en los costes: es lo que de verdad dice
+    // cuánta tierra de cada color necesita el mazo
+    (c.mc || "").match(/\{[^}]+\}/g)?.forEach(sim => {
+      "WUBRG".split("").forEach(col => {
+        if (sim.includes(col)) simbolos[col] = (simbolos[col] || 0) + q;
+      });
+    });
+  });
+
+  return { curva, tipos, simbolos, tierras,
+           cmcMedio: conCmc ? (sumaCmc / conCmc) : 0, conCmc };
+}
+
+function panelEstadisticas(m) {
+  const e = estadisticas(m);
+  const maxCurva = Math.max(1, ...Object.values(e.curva));
+  const totalSim = Object.values(e.simbolos).reduce((a,b) => a+b, 0) || 1;
+  const maxTipo = Math.max(1, ...Object.values(e.tipos));
+
+  const barrasCurva = [0,1,2,3,4,5,6,7].map(k => {
+    const v = e.curva[k] || 0;
+    const alto = Math.round((v / maxCurva) * 110);
+    return `<div style="display:flex;flex-direction:column;align-items:center;gap:.3rem;flex:1">
+      <div style="font-size:.72rem;color:var(--text2)">${v || ""}</div>
+      <div style="width:100%;max-width:38px;height:${alto}px;min-height:${v?4:0}px;
+                  background:linear-gradient(180deg,var(--accent),#8e2b3c);border-radius:4px 4px 0 0"></div>
+      <div style="font-size:.72rem;color:var(--text2)">${k === 7 ? "7+" : k}</div>
+    </div>`;
+  }).join("");
+
+  const barrasTipo = ORDEN_TIPOS.filter(t => e.tipos[t]).map(t => `
+    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem">
+      <span style="width:96px;font-size:.75rem;color:var(--text2)">${t === "Commander" ? "Comandante" : t}</span>
+      <div style="flex:1;background:var(--surface2);border-radius:4px;height:14px;overflow:hidden">
+        <div style="width:${(e.tipos[t]/maxTipo*100).toFixed(1)}%;height:100%;
+                    background:${COLOR_TIPO[t]}"></div>
+      </div>
+      <b style="font-size:.78rem;width:26px;text-align:right">${e.tipos[t]}</b>
+    </div>`).join("");
+
+  const barrasColor = "WUBRG".split("").filter(c => e.simbolos[c]).map(c => {
+    const arch = META.simbolos && META.simbolos["{" + c + "}"];
+    const pct = (e.simbolos[c] / totalSim * 100);
+    return `<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem">
+      ${arch ? `<img src="assets/simbolos/${arch}" alt="${c}" width="18" height="18"
+                     style="width:18px;height:18px">` : `<span style="width:18px">${c}</span>`}
+      <div style="flex:1;background:var(--surface2);border-radius:4px;height:14px;overflow:hidden">
+        <div style="width:${pct.toFixed(1)}%;height:100%;background:${COLOR_MANA[c]}"></div>
+      </div>
+      <b style="font-size:.78rem;width:52px;text-align:right">${e.simbolos[c]} · ${pct.toFixed(0)}%</b>
+    </div>`;
+  }).join("");
+
+  return `
+  <div class="panel" style="margin-top:2rem">
+    <h3 style="color:#fff;margin-bottom:1rem">Estadísticas del mazo</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.75rem">
+
+      <div>
+        <div class="fgroup"><label>Curva de maná (sin tierras)</label></div>
+        <div style="display:flex;align-items:flex-end;gap:.35rem;height:160px;margin-top:.5rem">
+          ${barrasCurva}
+        </div>
+        <div class="count" style="margin-top:.5rem">
+          CMC medio <b>${e.cmcMedio.toFixed(2)}</b> · <b>${e.conCmc}</b> hechizos ·
+          <b>${e.tierras}</b> tierras
+        </div>
+      </div>
+
+      <div>
+        <div class="fgroup" style="margin-bottom:.6rem"><label>Reparto por tipo</label></div>
+        ${barrasTipo}
+      </div>
+
+      <div>
+        <div class="fgroup" style="margin-bottom:.6rem"><label>Símbolos de maná en los costes</label></div>
+        ${barrasColor || '<div class="count">Mazo sin símbolos de color</div>'}
+        <div class="count" style="margin-top:.6rem">
+          Proporción útil para repartir las tierras de cada color
+        </div>
+      </div>
+
+    </div>
+  </div>`;
 }
 
 function detalleCarta(i) {
