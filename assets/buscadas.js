@@ -6,6 +6,9 @@ const $ = id => document.getElementById(id);
 const esc = t => String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 const RE_SIMBOLO = /\{[^}]+\}/g;
 
+const usd = v => (v === null || v === undefined || !v) ? ""
+  : "$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 let META = null, CARTAS = [], ORACLE = null, ORACLE_LISTO = false;
 let motivo = "todas", filtradas = [];
 
@@ -123,7 +126,9 @@ function render() {
   filtradas.sort(sorts[$("f-sort").value] || sorts.mazo);
 
   const copias = filtradas.reduce((s,c) => s + c.q, 0);
-  $("count").innerHTML = `<b>${filtradas.length}</b> cartas distintas · <b>${copias}</b> copias buscadas`;
+  const valor = filtradas.reduce((s,c) => s + (c.p || 0) * c.q, 0);
+  $("count").innerHTML = `<b>${filtradas.length}</b> cartas distintas · <b>${copias}</b> copias buscadas` +
+                         (valor ? ` · costarían <b>${usd(valor)}</b>` : "");
 
   if (!filtradas.length) {
     $("cartas").innerHTML = `<div class="empty">Nada coincide con estos filtros.</div>`;
@@ -163,7 +168,8 @@ function tarjeta(c) {
            : `<div class="noimg"><div style="font-size:1.5rem">🃏</div><div>${esc(c.n)}</div></div>`}
     <div class="cfoot">
       <div class="nm">${esc(c.n)}</div>
-      <div class="mt">${mana(c.mc)} ${c.s ? "· " + c.s : ""}</div>
+      <div class="mt">${mana(c.mc)} ${c.s ? "· " + c.s : ""}${
+        c.p ? ` · <span style="color:var(--ok)">${usd(c.p)}</span>` : ""}</div>
       <div class="mt" style="color:${c.tengo ? "var(--ok)" : "var(--text2)"}">
         ${c.tengo ? `Tengo ${c.tengo} en la colección` : "No la tengo"}
       </div>
@@ -183,7 +189,7 @@ function detalle(i) {
       <div style="color:var(--text2);font-size:.85rem">${esc(c.tl)}</div>
       ${texto ? `<div class="ot">${mana(texto, true)}</div>` : ""}
       ${kv("Coste", mana(c.mc))}${kv("CMC", c.c)}
-      ${kv("Busco", c.q + " copia(s)")}
+      ${kv("Precio de mercado", usd(c.p))}${kv("Busco", c.q + " copia(s)")}
       ${kv("Motivo", c.px ? `Proxy en el mazo ${c.mazo}` : "Lista de deseos")}
       ${kv("En mi colección", c.tengo ? `${c.tengo} copia(s)` : "ninguna")}
       ${kv("Edición preferida", c.s)}

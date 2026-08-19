@@ -18,6 +18,9 @@ const COLOR_TIPO = {
 };
 const COLOR_MANA = { W:"#f8f6d8", U:"#c1d7e9", B:"#6b6b6b", R:"#e4a08a", G:"#a3c095", C:"#cac5c0" };
 
+const usd = v => (v === null || v === undefined || !v) ? ""
+  : "$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 let META = null, MAZOS = [], ORACLE = null, ORACLE_LISTO = false;
 let actual = null;
 
@@ -130,6 +133,7 @@ function verListado() {
               : `<div class="mt" style="color:var(--accent)">Comandante sin identificar</div>`}
             <div class="mt" style="margin-top:.3rem">${m.copias} cartas${
               m.proxies ? ` · ${m.proxies} proxies` : ""} · CMC ${m.cmc_medio}</div>
+            ${m.valor_usd ? `<div class="mt" style="color:var(--ok)">${usd(m.valor_usd)}</div>` : ""}
           </div>
         </div>`).join("") + `</div>`
     : `<div class="empty">Ningún mazo coincide con esa búsqueda.</div>`;
@@ -178,6 +182,7 @@ function verMazo(m) {
         <div class="count"><b>${m.copias}</b> cartas${m.proxies
             ? ` (<b style="color:var(--accent)">${m.proxies} proxies</b>)` : ""} ·
           CMC medio <b>${m.cmc_medio}</b> ·
+          ${m.valor_usd ? `valor <b style="color:var(--ok)">${usd(m.valor_usd)}</b> · ` : ""}
           ${tipos.map(t => `${t} ${m.tipos[t]}`).join(" · ")}</div>
       </div>
     </div>`;
@@ -525,7 +530,7 @@ function detalleCarta(i) {
       ${kv("Coste", mana(c.mc))}${kv("CMC", c.c)}${kv("Fuerza/Resistencia", c.pt)}
       ${kv("Identidad de color", c.ci || "Incolora")}${kv("Rareza", c.r)}
       ${kv("Edición", c.s + (c.cn ? " · #" + c.cn : ""))}
-      ${kv("Copias en el mazo", c.q)}${kv("Foil", c.f ? "Sí" : "")}
+      ${kv("Precio de mercado", usd(c.p))}${kv("Copias en el mazo", c.q)}${kv("Foil", c.f ? "Sí" : "")}
       <div style="margin-top:1rem">
         <a class="btn" href="https://scryfall.com/card/${(c.s||"").toLowerCase()}/${c.cn}"
            target="_blank" rel="noopener">Ver en Scryfall</a>
@@ -621,7 +626,7 @@ async function verGuia(m) {
 function csvMazo(m) {
   const cols = ["is_commander","proxy","qty","name","foil","mana_cost","cmc","type_line",
                 "oracle_text","power_toughness","color_identity","rarity","set_code",
-                "collector_number","card_type"];
+                "collector_number","card_type","precio_usd"];
   const escapa = v => {
     const t = (v === null || v === undefined) ? "" : String(v);
     return /[",\n;]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
@@ -630,7 +635,7 @@ function csvMazo(m) {
     c.cmd ? "YES" : "", c.px ? "YES" : "", c.q, c.n, c.f ? "FOIL" : "",
     c.mc, (c.c ?? ""), c.tl,
     (ORACLE_LISTO ? (ORACLE[c.n] || "") : "").replace(/\r?\n/g, " / "),
-    c.pt, c.ci, c.r, c.s, c.cn, c.t
+    c.pt, c.ci, c.r, c.s, c.cn, c.t, (c.p ?? "")
   ].map(escapa).join(","));
 
   const cabecera = [
@@ -639,6 +644,7 @@ function csvMazo(m) {
     `# Identidad de color: ${m.ci || "incolora"}`,
     `# Cartas: ${m.copias} (${m.proxies || 0} proxies)`,
     `# CMC medio: ${m.cmc_medio}`,
+    `# Valor estimado: ${usd(m.valor_usd) || "n/d"}`,
     `# Generado: ${new Date().toISOString().slice(0,10)}`,
   ].join("\n");
 

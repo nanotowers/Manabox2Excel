@@ -10,6 +10,9 @@ const RAR_COLOR = { common:"#aaa", uncommon:"#8ab4f8", rare:"#ffd700",
 const RAR_NOMBRE = { common:"Común", uncommon:"Infrecuente", rare:"Rara",
                      mythic:"Mítica", special:"Especial", bonus:"Bonus" };
 
+const usd = v => (v === null || v === undefined || !v) ? ""
+  : "$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 let META = null, DOC = null, CARTAS = [], ORACLE = null, ORACLE_LISTO = false;
 let rareza = "", filtradas = [];
 
@@ -58,7 +61,8 @@ async function iniciar() {
     $("stats").innerHTML = [
       [t.cartas, "Cartas"], [t.miticas, "Míticas"],
       [t.raras, "Raras"], [t.foils, "Foils"]
-    ].map(([v,l]) => `<div class="stat"><b>${v || 0}</b><span>${l}</span></div>`).join("");
+    ].map(([v,l]) => `<div class="stat"><b>${v || 0}</b><span>${l}</span></div>`).join("")
+    + (t.valor_usd ? `<div class="stat"><b>${usd(t.valor_usd)}</b><span>Valor del pull</span></div>` : "");
 
     $("f-set").innerHTML = `<option value="">Todas</option>` +
       (DOC.sets || []).map(([c,n]) => `<option value="${c}">${c}${n ? " · " + n : ""}</option>`).join("");
@@ -105,13 +109,16 @@ function render() {
   const orden = { mythic:0, rare:1, special:2, bonus:3, uncommon:4, common:5 };
   const sorts = {
     rareza: (a,b) => (orden[a.r] ?? 9) - (orden[b.r] ?? 9) || b.f - a.f || a.n.localeCompare(b.n),
+    precio: (a,b) => (b.p || 0) - (a.p || 0) || a.n.localeCompare(b.n),
     name: (a,b) => a.n.localeCompare(b.n),
     cmc: (a,b) => (a.c ?? 99) - (b.c ?? 99) || a.n.localeCompare(b.n),
   };
   filtradas.sort(sorts[$("f-sort").value] || sorts.rareza);
 
   const copias = filtradas.reduce((s,c) => s + c.q, 0);
-  $("count").innerHTML = `<b>${filtradas.length}</b> cartas distintas · <b>${copias}</b> copias`;
+  const valor = filtradas.reduce((s,c) => s + (c.p || 0) * c.q, 0);
+  $("count").innerHTML = `<b>${filtradas.length}</b> cartas distintas · <b>${copias}</b> copias` +
+                         (valor ? ` · <b style="color:var(--ok)">${usd(valor)}</b>` : "");
 
   if (!filtradas.length) {
     $("cartas").innerHTML = `<div class="empty">Nada coincide con estos filtros.</div>`;
@@ -154,7 +161,8 @@ function tarjeta(c) {
            : `<div class="noimg"><div style="font-size:1.5rem">🃏</div><div>${esc(c.n)}</div></div>`}
     <div class="cfoot">
       <div class="nm">${esc(c.n)}</div>
-      <div class="mt">${mana(c.mc)} · <span style="color:${RAR_COLOR[c.r]||"#888"}">${c.s}</span></div>
+      <div class="mt">${mana(c.mc)} · <span style="color:${RAR_COLOR[c.r]||"#888"}">${c.s}</span>${
+        c.p ? ` · <span style="color:var(--ok)">${usd(c.p)}</span>` : ""}</div>
     </div>
   </div>`;
 }
@@ -172,7 +180,7 @@ function detalle(i) {
       ${texto ? `<div class="ot">${mana(texto, true)}</div>` : ""}
       ${kv("Coste", mana(c.mc))}${kv("CMC", c.c)}
       ${kv("Rareza", RAR_NOMBRE[c.r] || c.r)}${kv("Edición", c.s)}
-      ${kv("Copias", c.q)}${kv("Foil", c.f ? "Sí" : "")}
+      ${kv("Precio de mercado", usd(c.p))}${kv("Copias", c.q)}${kv("Foil", c.f ? "Sí" : "")}
       ${kv("Ya está en el mazo", c.mazo)}
       <div style="margin-top:1rem">
         <a class="btn" href="https://scryfall.com/card/${(c.s||"").toLowerCase()}/${c.cn}"

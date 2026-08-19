@@ -14,11 +14,13 @@ const val = id => { const e = $(id); return e ? e.value : ""; };
 const RAR_ORDEN = { mythic: 0, rare: 1, uncommon: 2, common: 3 };
 const RAR_COLOR = { common: "#aaa", uncommon: "#8ab4f8", rare: "#ffd700",
                     mythic: "#ff8c00", special: "#9b59b6", bonus: "#3498db" };
+const usd = v => (v === null || v === undefined) ? ""
+  : "$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 let META = null, CARDS = [], ORACLE = null, ORACLE_LISTO = false;
 let filtradas = [], picked = new Set();
 let vista = "grid", colors = new Set(), cmode = "subset";
-let ccount = "todos", onlyFoil = false;
+let ccount = "todos", onlyFoil = false, precioMin = 0;
 
 /* ── Carga ───────────────────────────────────────────────────────────────── */
 
@@ -116,6 +118,7 @@ function expandir(doc) {
     sb: lista(r[15], subs, true),
     t:  tipos[r[16]] || "Other",
     pt: r[17],
+    p:  r[18] === undefined ? null : r[18],
     ov: overrides[String(i)] || ""
   }));
 }
@@ -172,7 +175,8 @@ function pintarCabecera() {
   $("stats").innerHTML = [
     [t.distintas, "Cartas distintas"], [t.copias, "Copias totales"],
     [t.sets, "Ediciones"], [t.foils, "Foils"], [t.comandantes, "Comandantes"]
-  ].map(([v, l]) => `<div class="stat"><b>${v.toLocaleString("es")}</b><span>${l}</span></div>`).join("");
+  ].map(([v, l]) => `<div class="stat"><b>${v.toLocaleString("es")}</b><span>${l}</span></div>`).join("")
+   + (t.valor_usd ? `<div class="stat"><b>${usd(t.valor_usd)}</b><span>Valor estimado</span></div>` : "");
   $("pie").textContent = "Actualizada el " +
     new Date(META.generated_at).toLocaleDateString("es", { day:"numeric", month:"long", year:"numeric" });
 }
@@ -263,6 +267,7 @@ function aplicar() {
     if (cond && !c.cd.includes(cond)) return false;
     if (lang && !c.lg.includes(lang)) return false;
     if (onlyFoil && !c.f) return false;
+    if (precioMin > 0 && (c.p || 0) < precioMin) return false;
     if (c.c !== "" && (c.c < cmin || c.c > cmax)) return false;
     return colorOK(c);
   });
@@ -274,6 +279,7 @@ const SORTS = {
   rarity: (a, b) => (RAR_ORDEN[a.r] ?? 9) - (RAR_ORDEN[b.r] ?? 9) || a.n.localeCompare(b.n),
   set: (a, b) => (a.s || "").localeCompare(b.s || "") || a.n.localeCompare(b.n),
   qty: (a, b) => b.q - a.q || a.n.localeCompare(b.n),
+  precio: (a, b) => (b.p || 0) - (a.p || 0) || a.n.localeCompare(b.n),
 };
 
 /* ── Render ──────────────────────────────────────────────────────────────── */
@@ -283,8 +289,10 @@ function render() {
   filtradas.sort(SORTS[val("f-sort")] || SORTS.name);
 
   const copias = filtradas.reduce((s, c) => s + c.q, 0);
+  const valor = filtradas.reduce((s, c) => s + (c.p || 0) * c.q, 0);
   $("count").innerHTML = `<b>${filtradas.length.toLocaleString("es")}</b> cartas distintas · ` +
-                         `<b>${copias.toLocaleString("es")}</b> copias`;
+                         `<b>${copias.toLocaleString("es")}</b> copias` +
+                         (valor ? ` · <b>${usd(valor)}</b>` : "");
 
   if (vista === "grid") {
     $("viewport").hidden = false; $("tablewrap").hidden = true;
@@ -354,7 +362,8 @@ function tarjeta(c) {
     <div onclick="abrir(${i})">${cuerpo}</div>
     <div class="cfoot" onclick="abrir(${i})">
       <div class="nm">${c.n}</div>
-      <div class="mt">${mana(c.mc)} ${c.s ? "· " + c.s : ""}</div>
+      <div class="mt">${mana(c.mc)} ${c.s ? "· " + c.s : ""}${
+        c.p ? ` · <span style="color:var(--ok)">${usd(c.p)}</span>` : ""}</div>
     </div>
   </div>`;
 }
@@ -367,12 +376,13 @@ function dibujarTabla() {
     <td>${c.q}</td><td>${mana(c.mc)}</td><td>${c.c === "" ? "" : c.c}</td>
     <td style="font-size:.72rem">${c.tl}</td>
     <td><span style="color:${RAR_COLOR[c.r] || "#888"}">●</span> ${c.s}</td>
+    <td>${c.p ? usd(c.p) : ""}</td>
     <td>${c.cn || ""}</td><td>${c.cd.join(", ")}</td><td>${c.b.join(", ")}</td></tr>`).join("");
 
   $("tablewrap").innerHTML = !filtradas.length
     ? `<div class="empty">Ninguna carta coincide con estos filtros.</div>`
     : `<table><thead><tr><th></th><th>Carta</th><th>Cant</th><th>Coste</th><th>CMC</th>
-       <th>Tipo</th><th>Edición</th><th>N.º</th><th>Cond</th><th>Carpeta</th></tr></thead>
+       <th>Tipo</th><th>Edición</th><th>Precio</th><th>N.º</th><th>Cond</th><th>Carpeta</th></tr></thead>
        <tbody>${filas}</tbody></table>` +
       (filtradas.length > 500
         ? `<div class="empty">Mostrando las primeras 500 de ${filtradas.length}. Afina los filtros o usa la galería.</div>`
@@ -423,6 +433,8 @@ function abrir(i) {
       ${kv("Coste", mana(c.mc))}${kv("CMC", c.c)}${kv("Fuerza/Resistencia", c.pt)}
       ${kv("Identidad de color", c.ci || "Incolora")}${kv("Rareza", c.r)}
       ${kv("Edición", (c.sn || c.s) + (c.cn ? " · #" + c.cn : ""))}
+      ${kv("Precio de mercado", c.p ? usd(c.p) : "")}
+      ${kv("Valor de tus copias", c.p && c.q > 1 ? usd(c.p * c.q) : "")}
       ${kv("Copias", c.q)}${kv("Foil", c.f ? "Sí" : "")}${kv("Condición", c.cd.join(", "))}
       ${kv("Idioma", c.lg.join(", "))}${kv(c.b.length > 1 ? "Carpetas" : "Carpeta", c.b.join(", "))}
       <div style="margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap">
@@ -489,6 +501,9 @@ function eventos() {
     document.querySelectorAll("[data-cc]").forEach(x => x.classList.remove("on"));
     ch.classList.add("on"); ccount = ch.dataset.cc; render();
   }));
+  $("f-precio").addEventListener("input", e => {
+    precioMin = parseFloat(e.target.value) || 0; render();
+  });
   $("f-foil").addEventListener("click", () => {
     onlyFoil = !onlyFoil; $("f-foil").classList.toggle("on", onlyFoil); render();
   });
@@ -523,6 +538,7 @@ function eventos() {
     document.querySelectorAll("[data-cc]").forEach(x => x.classList.remove("on"));
     document.querySelector('[data-cc="todos"]').classList.add("on");
     onlyFoil = false; $("f-foil").classList.remove("on");
+    precioMin = 0;
     ["f-text", "f-subtxt", "f-cmin", "f-cmax", "f-tipo", "f-sub", "f-rar",
      "f-set", "f-binder", "f-cond", "f-lang", "cmd-input"]
       .forEach(id => { const e = $(id); if (e) e.value = ""; });
