@@ -16,6 +16,8 @@ const BASICAS = ["Plains","Island","Swamp","Mountain","Forest","Wastes"];
 const ORDEN_TIPOS = ["Commander","Planeswalker","Creature","Enchantment",
                      "Artifact","Instant","Sorcery","Land","Other"];
 const CLAVE_GUARDADO = "constructor_mazo";
+const usd = v => (v === null || v === undefined || !v) ? ""
+  : "$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 let META = null, CARDS = [], ORACLE = null, ORACLE_LISTO = false;
 let comandante = null, mazo = new Map(), filtradas = [];
@@ -76,6 +78,7 @@ async function iniciar() {
       s: sets[r[6]] ? sets[r[6]][0] : "", sn: sets[r[6]] ? sets[r[6]][1] : "",
       cn: r[7], ci: r[8], co: r[9], f: r[10], q: r[11],
       sb: lista(r[15], subs, true), t: tipos[r[16]] || "Other", pt: r[17],
+      p: r[18] === undefined ? null : r[18],
       ov: doc.overrides[String(i)] || ""
     }));
 
@@ -258,6 +261,7 @@ function tarjeta(c) {
       <div class="nm">${esc(c.n)}</div>
       <div class="mt">${mana(c.mc)} · ${esBasica(c) ? "sin límite"
         : c.disp + " disponible" + (c.disp === 1 ? "" : "s")}</div>
+      ${c.p ? `<div class="mt" style="color:var(--ok)">${usd(c.p)}</div>` : ""}
     </div>
   </div>`;
 }
@@ -311,8 +315,11 @@ function actualizarBarra() {
   const hechizos = [...mazo.values()].filter(e => e.c.t !== "Land" && e.c.c !== "");
   const cmc = hechizos.reduce((s,e) => s + e.c.c * e.q, 0);
   const nHech = hechizos.reduce((s,e) => s + e.q, 0);
+  const valor = [...mazo.values()].reduce((s,e) => s + (e.c.p || 0) * e.q, 0)
+              + (comandante && comandante.p ? comandante.p : 0);
   $("dk-detalle").textContent =
     `· ${tierras} tierras · CMC medio ${nHech ? (cmc/nHech).toFixed(2) : "0.00"}` +
+    (valor ? ` · ${usd(valor)}` : "") +
     (t === 100 ? " · ¡completo!" : ` · faltan ${100 - t}`);
 }
 
@@ -471,7 +478,11 @@ function aplicarTierras() {
 /* ── Mazo, exportación y guardado ────────────────────────────────────────── */
 
 function textoMazo() {
-  const l = [`1 ${comandante.n}${comandante.s ? ` (${comandante.s})` : ""}   # COMANDANTE`];
+  const valor = [...mazo.values()].reduce((s,e) => s + (e.c.p || 0) * e.q, 0)
+              + (comandante.p || 0);
+  const l = [];
+  if (valor) l.push(`# Valor aproximado: ${usd(valor)}`, "");
+  l.push(`1 ${comandante.n}${comandante.s ? ` (${comandante.s})` : ""}   # COMANDANTE`);
   ORDEN_TIPOS.forEach(t => {
     const grupo = [...mazo.values()].filter(e => e.c.t === t)
                                     .sort((a,b) => a.c.n.localeCompare(b.c.n));
@@ -494,7 +505,8 @@ function verMazo() {
       ${g.sort((a,b) => (a.c.c||0)-(b.c.c||0) || a.c.n.localeCompare(b.c.n)).map(e =>
         `<div style="display:flex;justify-content:space-between;gap:.5rem;padding:.15rem 0;font-size:.85rem">
            <span>${e.q}× ${esc(e.c.n)}</span>
-           <span>${mana(e.c.mc)}</span>
+           <span>${mana(e.c.mc)}${e.c.p
+             ? ` <span style="color:var(--ok)">${usd(e.c.p * e.q)}</span>` : ""}</span>
          </div>`).join("")}
     </div>`;
   }).join("");
@@ -502,7 +514,11 @@ function verMazo() {
   $("modal").innerHTML = `<span class="close" onclick="cerrar()">&times;</span>
     <div class="info" style="flex:1">
       <h2>${esc(comandante.n)}</h2>
-      <div class="count" style="margin-bottom:1rem">${t} / 100 cartas</div>
+      <div class="count" style="margin-bottom:1rem">${t} / 100 cartas${(() => {
+        const v = [...mazo.values()].reduce((s,e) => s + (e.c.p || 0) * e.q, 0)
+                + (comandante.p || 0);
+        return v ? ` · valor aproximado <b style="color:var(--ok)">${usd(v)}</b>` : "";
+      })()}</div>
       ${porTipo || '<div class="count">El mazo está vacío.</div>'}
       <div style="margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap">
         <button class="btn solid" onclick="copiar(this)">Copiar lista</button>
