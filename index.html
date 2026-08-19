@@ -14,7 +14,7 @@
 <meta name="twitter:card" content="summary_large_image">
 
 <link rel="icon" href="assets/favicon.png">
-<link rel="stylesheet" href="assets/styles.css?v=202608192228">
+<link rel="stylesheet" href="assets/styles.css?v=202608192238">
 <link rel="preload" href="data/meta.json" as="fetch" crossorigin>
 <link rel="preload" href="data/cards.json" as="fetch" crossorigin>
 </head>
@@ -139,6 +139,11 @@
           </div>
         </div>
         <div class="fgroup">
+          <label>Precio mínimo (USD)</label>
+          <input class="mtxt" id="f-precio" type="number" min="0" step="0.5"
+                 placeholder="0" style="width:90px">
+        </div>
+        <div class="fgroup">
           <label>&nbsp;</label>
           <div style="display:flex;gap:.4rem;flex-wrap:wrap">
             <button class="chip" id="f-foil">Solo foil</button>
@@ -157,6 +162,7 @@
           <option value="rarity">Rareza</option>
           <option value="set">Edición</option>
           <option value="qty">Cantidad</option>
+          <option value="precio">Precio</option>
         </select>
         <select class="msel" id="f-size">
           <option value="">Tamaño automático</option>
@@ -192,6 +198,6 @@
   <a href="https://scryfall.com" target="_blank" rel="noopener" style="color:var(--text2)">Scryfall</a>
 </footer>
 
-<script src="assets/app.js?v=202608192228"></script>
+<script src="assets/app.js?v=202608192238"></script>
 </body>
 </html>

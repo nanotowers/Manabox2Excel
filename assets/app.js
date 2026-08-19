@@ -57,12 +57,10 @@ async function iniciar() {
 
     // Tercer tiempo: los textos de reglas, sin bloquear nada
     // El enlace a los mazos solo aparece si de verdad hay mazos exportados
-    fetch("data/mazos.json", { method: "HEAD" })
-      .then(r => { if (r.ok) $("nav-mazos").hidden = false; })
-      .catch(() => {});
+    const mostrar = id => { const e = $(id); if (e) e.hidden = false; };
+    mostrar("nav-mazos");        // la barra de navegación siempre visible
     fetch("data/buscadas.json", { method: "HEAD" })
-      .then(r => { if (r.ok) { $("nav-mazos").hidden = false;
-                               $("link-buscadas").hidden = false; } })
+      .then(r => { if (r.ok) mostrar("link-buscadas"); })
       .catch(() => {});
 
     traer("data/oracle.json").then(d => {
@@ -175,8 +173,7 @@ function pintarCabecera() {
   $("stats").innerHTML = [
     [t.distintas, "Cartas distintas"], [t.copias, "Copias totales"],
     [t.sets, "Ediciones"], [t.foils, "Foils"], [t.comandantes, "Comandantes"]
-  ].map(([v, l]) => `<div class="stat"><b>${v.toLocaleString("es")}</b><span>${l}</span></div>`).join("")
-   + (t.valor_usd ? `<div class="stat"><b>${usd(t.valor_usd)}</b><span>Valor estimado</span></div>` : "");
+  ].map(([v, l]) => `<div class="stat"><b>${v.toLocaleString("es")}</b><span>${l}</span></div>`).join("");
   $("pie").textContent = "Actualizada el " +
     new Date(META.generated_at).toLocaleDateString("es", { day:"numeric", month:"long", year:"numeric" });
 }
@@ -289,10 +286,13 @@ function render() {
   filtradas.sort(SORTS[val("f-sort")] || SORTS.name);
 
   const copias = filtradas.reduce((s, c) => s + c.q, 0);
-  const valor = filtradas.reduce((s, c) => s + (c.p || 0) * c.q, 0);
+  // El valor solo aparece cuando hay filtros: sirve para tasar una selección,
+  // no para publicar cuánto vale la colección entera
+  const filtrando = filtradas.length < CARDS.length;
+  const valor = filtrando ? filtradas.reduce((s, c) => s + (c.p || 0) * c.q, 0) : 0;
   $("count").innerHTML = `<b>${filtradas.length.toLocaleString("es")}</b> cartas distintas · ` +
                          `<b>${copias.toLocaleString("es")}</b> copias` +
-                         (valor ? ` · <b>${usd(valor)}</b>` : "");
+                         (valor ? ` · <b>${usd(valor)}</b></b>` : "");
 
   if (vista === "grid") {
     $("viewport").hidden = false; $("tablewrap").hidden = true;
@@ -483,12 +483,16 @@ async function buscarComandante() {
 /* ── Eventos ─────────────────────────────────────────────────────────────── */
 
 function eventos() {
-  ["f-text", "f-subtxt", "f-cmin", "f-cmax"].forEach(id => $(id).addEventListener("input", () => render()));
+  // Enganchamos solo lo que exista: si el HTML es de otra versión y falta un
+  // control, la página sigue funcionando en vez de quedarse en blanco
+  const on = (id, evento, fn) => { const e = $(id); if (e) e.addEventListener(evento, fn); };
+
+  ["f-text", "f-subtxt", "f-cmin", "f-cmax"].forEach(id => on(id, "input", () => render()));
   ["f-tipo", "f-sub", "f-rar", "f-set", "f-sort", "f-binder", "f-cond", "f-lang"]
     .forEach(id => { const e = $(id); if (e) e.addEventListener("change", () => render()); });
 
-  $("f-sub").addEventListener("change", () => { if (val("f-sub")) $("f-subtxt").value = ""; });
-  $("f-subtxt").addEventListener("input", () => { if (val("f-subtxt")) $("f-sub").value = ""; });
+  on("f-sub", "change", () => { if (val("f-sub")) { const e = $("f-subtxt"); if (e) e.value = ""; } });
+  on("f-subtxt", "input", () => { if (val("f-subtxt")) { const e = $("f-sub"); if (e) e.value = ""; } });
 
   document.querySelectorAll(".pip").forEach(p => p.addEventListener("click", () => {
     const c = p.dataset.c;
@@ -496,33 +500,31 @@ function eventos() {
     p.classList.toggle("on", colors.has(c));
     render();
   }));
-  $("f-cmode").addEventListener("change", e => { cmode = e.target.value; render(); });
+  on("f-cmode", "change", e => { cmode = e.target.value; render(); });
   document.querySelectorAll("[data-cc]").forEach(ch => ch.addEventListener("click", () => {
     document.querySelectorAll("[data-cc]").forEach(x => x.classList.remove("on"));
     ch.classList.add("on"); ccount = ch.dataset.cc; render();
   }));
-  $("f-precio").addEventListener("input", e => {
-    precioMin = parseFloat(e.target.value) || 0; render();
-  });
-  $("f-foil").addEventListener("click", () => {
+  on("f-precio", "input", e => { precioMin = parseFloat(e.target.value) || 0; render(); });
+  on("f-foil", "click", () => {
     onlyFoil = !onlyFoil; $("f-foil").classList.toggle("on", onlyFoil); render();
   });
 
-  $("v-grid").addEventListener("click", () => {
+  on("v-grid", "click", () => {
     vista = "grid"; $("v-grid").classList.add("on"); $("v-table").classList.remove("on"); render();
   });
-  $("v-table").addEventListener("click", () => {
+  on("v-table", "click", () => {
     vista = "table"; $("v-table").classList.add("on"); $("v-grid").classList.remove("on"); render();
   });
-  $("f-size").addEventListener("change", e => {
+  on("f-size", "change", e => {
     if (e.target.value) document.documentElement.style.setProperty("--card-w", e.target.value + "px");
     else document.documentElement.style.removeProperty("--card-w");
     render();
   });
 
-  $("cmd-go").addEventListener("click", buscarComandante);
-  $("cmd-input").addEventListener("keydown", e => { if (e.key === "Enter") buscarComandante(); });
-  $("cmd-clear").addEventListener("click", () => {
+  on("cmd-go", "click", buscarComandante);
+  on("cmd-input", "keydown", e => { if (e.key === "Enter") buscarComandante(); });
+  on("cmd-clear", "click", () => {
     colors.clear();
     document.querySelectorAll(".pip").forEach(p => p.classList.remove("on"));
     $("cmd-input").value = "";
@@ -530,7 +532,7 @@ function eventos() {
     render();
   });
 
-  $("f-clear").addEventListener("click", () => {
+  on("f-clear", "click", () => {
     colors.clear();
     document.querySelectorAll(".pip").forEach(p => p.classList.remove("on"));
     cmode = "subset"; $("f-cmode").value = "subset";
@@ -546,17 +548,17 @@ function eventos() {
     render();
   });
 
-  $("export-filtro").addEventListener("click", () => {
+  on("export-filtro", "click", () => {
     if (filtradas.length) descargar(listaTexto(filtradas), "coleccion_filtrada.txt");
   });
-  $("pick-copy").addEventListener("click", e => copiar(listaTexto(seleccionadas()), e.target));
-  $("pick-download").addEventListener("click", () => descargar(listaTexto(seleccionadas()), "intercambio.txt"));
-  $("pick-clear").addEventListener("click", () => {
+  on("pick-copy", "click", e => copiar(listaTexto(seleccionadas()), e.target));
+  on("pick-download", "click", () => descargar(listaTexto(seleccionadas()), "intercambio.txt"));
+  on("pick-clear", "click", () => {
     picked.clear(); $("pick-count").textContent = "0";
     $("tradebar").classList.remove("show");
     vista === "grid" ? pintarVentana() : dibujarTabla();
   });
-  $("pick-view").addEventListener("click", () => {
+  on("pick-view", "click", () => {
     $("modal").innerHTML = `<span class="close" onclick="cerrar()">&times;</span>
       <div class="info" style="flex:1">
         <h2>Lista de intercambio (${picked.size})</h2>
