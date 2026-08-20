@@ -159,7 +159,7 @@ function verMazo(m) {
   const tieneGuia = !!(g.texto || g.audio || (g.imagenes || []).length);
   $("d-tabs").innerHTML = `
     <button class="chip on" id="tab-mazo">Mazo</button>
-    <button class="chip" id="tab-guia">Guía${tieneGuia ? "" : " (vacía)"}</button>`;
+    <button class="chip" id="tab-guia">Guía${tieneGuia ? "" : " ·"}</button>`;
   $("tab-mazo").onclick = () => {
     $("tab-mazo").classList.add("on"); $("tab-guia").classList.remove("on");
     $("d-filtros").hidden = false; pintarCartas();
@@ -584,6 +584,36 @@ function md(texto) {
 
 async function verGuia(m) {
   const g = m.guia || {};
+  const tieneAlgo = !!(g.texto || g.audio || (g.imagenes || []).length);
+
+  // Sin material todavía: en vez de un hueco vacío, una página de cortesía
+  if (!tieneAlgo) {
+    $("d-cartas").innerHTML = `
+      <div class="panel" style="text-align:center;padding:1.5rem 1rem">
+        <img src="assets/banner-proximamente.jpg"
+             alt="Estamos trabajando en nuevo contenido"
+             style="width:100%;max-width:1000px;border-radius:14px;
+                    box-shadow:0 10px 34px rgba(0,0,0,.6);margin-bottom:1.5rem">
+        <h2 style="color:#fff;margin-bottom:.5rem">
+          La guía de ${esc(m.nombre)} está en preparación
+        </h2>
+        <p style="color:var(--text2);max-width:620px;margin:0 auto 1.5rem;line-height:1.7">
+          Estoy grabando el podcast, armando las infografías y escribiendo el manual
+          de pilotaje de este mazo. Vuelve pronto.
+        </p>
+        <div style="display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap">
+          <button class="btn solid" onclick="document.getElementById('tab-mazo').click()">
+            Ver la lista del mazo</button>
+          <a class="btn" href="mazos.html">Otros mazos</a>
+        </div>
+        <div class="count" style="margin-top:1.75rem;opacity:.55">
+          Para publicarla: añade <code>guias/${m.slug}.md</code>,
+          <code>guias/${m.slug}.mp3</code> o <code>guias/${m.slug}-1.png</code>
+        </div>
+      </div>`;
+    return;
+  }
+
   let texto = "";
   if (g.texto) {
     try {
@@ -610,14 +640,6 @@ async function verGuia(m) {
                  style="width:100%;max-width:900px;border-radius:12px;margin-bottom:1rem;
                         cursor:zoom-in;display:block">`).join("")}
         </div>` : ""}
-      ${!texto && !g.audio && !(g.imagenes || []).length
-        ? `<div class="empty">
-             Este mazo aún no tiene guía.<br><br>
-             Añade archivos a <code>guias/</code> con el nombre <code>${m.slug}</code>:
-             <code>${m.slug}.md</code> para el texto,
-             <code>${m.slug}.mp3</code> para el podcast,
-             <code>${m.slug}-1.png</code> para las infografías.
-           </div>` : ""}
     </div>`;
 }
 
