@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mi último destape</title>
-<meta name="description" content="Las cartas que saqué en el último prerelease.">
-<meta property="og:title" content="Mi último destape">
-<meta property="og:image" content="https://nanotowers.github.io/Manabox2Excel/assets/banner-destape.jpg">
+<title>Galería SLD</title>
+<meta name="description" content="Secret Lair: arte exclusivo, ediciones únicas.">
+<meta property="og:title" content="Galería SLD">
+<meta property="og:image" content="https://nanotowers.github.io/Manabox2Excel/assets/banner-sld.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="assets/favicon.png">
 <link rel="stylesheet" href="assets/styles.css?v=202608200926">
@@ -14,12 +14,12 @@
 <body>
 
 <header>
-  <img class="hero" src="assets/banner-destape.jpg" alt="Mi último destape">
-  <p id="subtitulo">Las cartas que salieron de los sobres</p>
+  <img class="hero" src="assets/banner-sld.jpg" alt="Galería SLD">
+  <p>Piezas de colección — no están disponibles para intercambio,
+     pero sí puedes usarlas en el constructor de mazos</p>
   <div class="stats" id="stats"></div>
   <div style="margin-top:1rem;display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap">
     <a class="btn" href="index.html">← Colección</a>
-    <a class="btn" href="sld.html">Galería SLD</a>
     <a class="btn" href="mazos.html">Mis mazos</a>
     <a class="btn" href="constructor.html">Arma tu mazo</a>
   </div>
@@ -27,38 +27,43 @@
 
 <main>
   <div id="loader">
-    <p id="loader-txt">Cargando destape...</p>
+    <p id="loader-txt">Cargando galería...</p>
     <div class="bar"><div class="fill" id="loader-fill"></div></div>
   </div>
 
   <div id="app" hidden>
     <div class="panel">
       <div class="frow">
-        <div class="fgroup" style="flex:1;min-width:200px">
+        <div class="fgroup" style="flex:1;min-width:220px">
           <label>Buscar</label>
           <input class="mtxt wide" id="f-text" placeholder="Nombre de carta...">
         </div>
         <div class="fgroup">
-          <label>Edición</label>
-          <select class="msel" id="f-set"><option value="">Todas</option></select>
+          <label>Color</label>
+          <div class="pips">
+            <div class="pip pip-W" data-c="W" title="Blanco">W</div>
+            <div class="pip pip-U" data-c="U" title="Azul">U</div>
+            <div class="pip pip-B" data-c="B" title="Negro">B</div>
+            <div class="pip pip-R" data-c="R" title="Rojo">R</div>
+            <div class="pip pip-G" data-c="G" title="Verde">G</div>
+            <div class="pip pip-C" data-c="C" title="Incoloro">C</div>
+          </div>
         </div>
         <div class="fgroup">
-          <label>Rareza</label>
-          <div style="display:flex;gap:.4rem;flex-wrap:wrap">
-            <button class="chip on" data-r="">Todas</button>
-            <button class="chip" data-r="mythic">Míticas</button>
-            <button class="chip" data-r="rare">Raras</button>
-            <button class="chip" data-r="foil">Foils</button>
-          </div>
+          <label>Tipo</label>
+          <select class="msel" id="f-tipo"><option value="">Todos</option></select>
         </div>
         <div class="fgroup">
           <label>Orden</label>
           <select class="msel" id="f-sort">
-            <option value="rareza">Por rareza</option>
-            <option value="name">Nombre</option>
-            <option value="cmc">CMC</option>
+            <option value="name">Nombre A-Z</option>
             <option value="precio">Precio</option>
+            <option value="cmc">CMC</option>
           </select>
+        </div>
+        <div class="fgroup">
+          <label>&nbsp;</label>
+          <button class="chip" id="f-foil">Solo foil</button>
         </div>
       </div>
     </div>
@@ -75,6 +80,6 @@
   <a href="https://scryfall.com" target="_blank" rel="noopener" style="color:var(--text2)">Scryfall</a>
 </footer>
 
-<script src="assets/destape.js?v=202608200926"></script>
+<script src="assets/sld.js?v=202608200926"></script>
 </body>
 </html>

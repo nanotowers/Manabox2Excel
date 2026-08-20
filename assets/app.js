@@ -117,6 +117,7 @@ function expandir(doc) {
     t:  tipos[r[16]] || "Other",
     pt: r[17],
     p:  r[18] === undefined ? null : r[18],
+    x:  r[19] === undefined ? 0 : r[19],   // 1 = vitrina, fuera del catálogo
     ov: overrides[String(i)] || ""
   }));
 }
@@ -251,6 +252,8 @@ function aplicar() {
   const cmax = val("f-cmax") === "" ? 99 : +val("f-cmax");
 
   return CARDS.filter(c => {
+    // Las piezas de vitrina no se ofrecen a cambio: viven en su propia página
+    if (c.x) return false;
     if (q) {
       const enNombre = c.n.toLowerCase().includes(q);
       const enTexto = ORACLE_LISTO && (ORACLE[c.n] || "").toLowerCase().includes(q);

@@ -79,6 +79,7 @@ async function iniciar() {
       cn: r[7], ci: r[8], co: r[9], f: r[10], q: r[11],
       sb: lista(r[15], subs, true), t: tipos[r[16]] || "Other", pt: r[17],
       p: r[18] === undefined ? null : r[18],
+      x: r[19] === undefined ? 0 : r[19],
       ov: doc.overrides[String(i)] || ""
     }));
 
@@ -252,6 +253,7 @@ function tarjeta(c) {
     <div class="pick" onclick="quitar('${esc(c.n).replace(/'/g,"\\'")}')"
          style="${n ? "" : "display:none"}">−</div>
     ${n ? `<div class="badge" style="background:var(--ok)">×${n}</div>` : ""}
+    ${c.x ? `<div class="badge" style="top:auto;bottom:44px;background:#7a5c00">SLD</div>` : ""}
     <div onclick="agregar('${esc(c.n).replace(/'/g,"\\'")}')">
       ${(c.id || c.ov) ? `<img src="${img(c,'normal')}" srcset="${srcset(c)}"
               sizes="(max-width:600px) 46vw, 210px" alt="${esc(c.n)}" loading="lazy">`
