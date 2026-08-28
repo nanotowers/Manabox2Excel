@@ -554,6 +554,21 @@ function eventos() {
   on("export-filtro", "click", () => {
     if (filtradas.length) descargar(listaTexto(filtradas), "coleccion_filtrada.txt");
   });
+  on("pick-wa", "click", () => {
+    const sel = seleccionadas();
+    if (!sel.length) return;
+    const valor = sel.reduce((s, c) => s + (c.p || 0) * (c._pick || 1), 0);
+    let cuerpo = sel.map(c => `${c._pick || 1} ${c.n}${c.s ? ` (${c.s})` : ""}`).join("\n");
+    const cabecera = `Hola Vlad, me interesan estas cartas de tu colección:\n\n`;
+    const pie = valor ? `\n\nTotal aproximado: ${usd(valor)}` : "";
+
+    if ((cabecera + cuerpo + pie).length > WA_LIMITE) {
+      const caben = sel.slice(0, 25);
+      cuerpo = caben.map(c => `${c._pick || 1} ${c.n}${c.s ? ` (${c.s})` : ""}`).join("\n")
+             + `\n... y ${sel.length - caben.length} más (te paso el archivo)`;
+    }
+    waEnviar(cabecera + cuerpo + pie);
+  });
   on("pick-copy", "click", e => copiar(listaTexto(seleccionadas()), e.target));
   on("pick-download", "click", () => descargar(listaTexto(seleccionadas()), "intercambio.txt"));
   on("pick-clear", "click", () => {

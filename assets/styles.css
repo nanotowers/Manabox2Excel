@@ -172,3 +172,27 @@ footer{text-align:center;color:var(--text2);font-size:.72rem;padding:2rem 1rem 1
   .modal{padding:1rem}
   .modal img{flex:none;width:100%;max-width:420px;margin:0 auto}
 }
+
+
+/* ── Botón flotante de WhatsApp ──────────────────────────────────────────────
+   Va sobre todo lo demás salvo el modal. En el constructor sube para no
+   chocar con la barra del mazo (ver .con-deckbar más abajo).            */
+.wa-float{
+  position:fixed; right:18px; bottom:18px; z-index:250;
+  width:54px; height:54px; border-radius:50%;
+  background:#25D366; box-shadow:0 6px 20px rgba(0,0,0,.45);
+  display:flex; align-items:center; justify-content:center;
+  transition:transform .18s, box-shadow .18s;
+}
+.wa-float:hover{ transform:scale(1.08); box-shadow:0 8px 26px rgba(37,211,102,.5) }
+.wa-float svg{ width:30px; height:30px; fill:#fff }
+body.con-deckbar .wa-float{ bottom:96px }
+
+/* Que el contenido no quede debajo del botón */
+footer{ padding-bottom:5rem }
+
+@media (max-width:600px){
+  .wa-float{ width:48px; height:48px; right:12px; bottom:12px }
+  .wa-float svg{ width:26px; height:26px }
+  body.con-deckbar .wa-float{ bottom:104px }
+}

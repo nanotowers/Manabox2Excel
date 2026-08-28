@@ -19,6 +19,19 @@ const CLAVE_GUARDADO = "constructor_mazo";
 const usd = v => (v === null || v === undefined || !v) ? ""
   : "$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+
+/* ── Envío por WhatsApp ──────────────────────────────────────────────────────
+   Las URLs wa.me aguantan unos 2.000 caracteres. Cuando la lista no cabe se
+   manda un resumen y se le pide al visitante que adjunte el TXT: es mejor un
+   mensaje corto y claro que uno cortado a la mitad.                        */
+const WHATSAPP = "573008544320";
+const WA_LIMITE = 1800;
+
+function waEnviar(texto) {
+  const url = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(texto);
+  window.open(url, "_blank", "noopener");
+}
+
 let META = null, CARDS = [], ORACLE = null, ORACLE_LISTO = false;
 let comandante = null, mazo = new Map(), filtradas = [];
 
@@ -590,6 +603,35 @@ function eventos() {
   });
 
   $("dk-tierras").addEventListener("click", proponerTierras);
+  $("dk-wa").addEventListener("click", () => {
+    if (!mazo.size) { avisar("Añade cartas al mazo antes de enviarlo."); return; }
+    const t = total();
+    const valor = [...mazo.values()].reduce((s, e) => s + (e.c.p || 0) * e.q, 0)
+                + (comandante.p || 0);
+    const tierras = [...mazo.values()].filter(e => e.c.t === "Land")
+                                      .reduce((s, e) => s + e.q, 0);
+    const hech = [...mazo.values()].filter(e => e.c.t !== "Land" && e.c.c !== "");
+    const nH = hech.reduce((s, e) => s + e.q, 0);
+    const cmc = nH ? (hech.reduce((s, e) => s + e.c.c * e.q, 0) / nH).toFixed(2) : "0.00";
+
+    const cabecera =
+      `Hola Vlad, armé un mazo con tus cartas:\n\n` +
+      `Comandante: ${comandante.n}\n` +
+      `${t} cartas · ${tierras} tierras · CMC medio ${cmc}` +
+      (valor ? ` · valor aprox. ${usd(valor)}` : "") + `\n\n`;
+
+    const completo = cabecera + textoMazo().replace(/^# [^\n]*\n\n?/, "");
+    if (completo.length <= WA_LIMITE) { waEnviar(completo); return; }
+
+    // Un mazo de 100 no cabe en una URL: mandamos lo destacado
+    const caras = [...mazo.values()].filter(e => e.c.p)
+                    .sort((a, b) => (b.c.p * b.q) - (a.c.p * a.q)).slice(0, 12);
+    waEnviar(cabecera +
+      (caras.length ? `Cartas destacadas:\n` +
+        caras.map(e => `${e.q} ${e.c.n} (${usd(e.c.p)})`).join("\n") + `\n\n` : "") +
+      `Te adjunto la lista completa en el chat.`);
+    descargar();   // el TXT se descarga para que lo adjunte
+  });
   $("dk-ver").addEventListener("click", verMazo);
   $("dk-txt").addEventListener("click", descargar);
   $("dk-copiar").addEventListener("click", e => copiar(e.target));

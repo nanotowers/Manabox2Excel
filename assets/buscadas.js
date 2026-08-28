@@ -9,6 +9,19 @@ const RE_SIMBOLO = /\{[^}]+\}/g;
 const usd = v => (v === null || v === undefined || !v) ? ""
   : "$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+
+/* ── Envío por WhatsApp ──────────────────────────────────────────────────────
+   Las URLs wa.me aguantan unos 2.000 caracteres. Cuando la lista no cabe se
+   manda un resumen y se le pide al visitante que adjunte el TXT: es mejor un
+   mensaje corto y claro que uno cortado a la mitad.                        */
+const WHATSAPP = "573008544320";
+const WA_LIMITE = 1800;
+
+function waEnviar(texto) {
+  const url = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(texto);
+  window.open(url, "_blank", "noopener");
+}
+
 let META = null, CARTAS = [], ORACLE = null, ORACLE_LISTO = false;
 let motivo = "todas", filtradas = [];
 
@@ -97,6 +110,19 @@ function preparar() {
     a.href = URL.createObjectURL(new Blob([texto()], { type:"text/plain" }));
     a.download = "cartas_que_busco.txt"; a.click(); URL.revokeObjectURL(a.href);
   });
+  const wa = $("wa-buscadas");
+  if (wa) wa.addEventListener("click", () => {
+    if (!filtradas.length) return;
+    const cabecera = `Hola Vlad, creo que tengo algunas de las cartas que buscas:\n\n`;
+    const lista = filtradas.map(c => `${c.q} ${c.n}${c.s ? ` (${c.s})` : ""}`);
+    let cuerpo = lista.join("\n");
+    if ((cabecera + cuerpo).length > WA_LIMITE) {
+      cuerpo = lista.slice(0, 25).join("\n") +
+               `\n... y ${lista.length - 25} más de tu lista`;
+    }
+    waEnviar(cabecera + cuerpo + `\n\n(dime cuáles te interesan y las aparto)`);
+  });
+
   $("overlay").addEventListener("click", e => { if (e.target.id === "overlay") cerrar(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape") cerrar(); });
 }
