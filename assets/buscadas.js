@@ -71,7 +71,8 @@ async function iniciar() {
         { day:"numeric", month:"long", year:"numeric" });
 
     $("loader-fill").style.width = "80%";
-    CARTAS = (await traer("data/buscadas.json")).cartas || [];
+    CARTAS = ((await traer("data/buscadas.json")).cartas || [])
+               .map((c, i) => ({ ...c, _i: i }));
 
     $("loader").hidden = true;
     $("app").hidden = false;
@@ -125,7 +126,7 @@ function eventos() {
   });
   const wa = $("wa-buscadas");
   if (wa) wa.addEventListener("click", () => {
-    const sel = [...picked].map(i => CARTAS[i]).filter(Boolean);
+    const sel = CARTAS.filter(c => picked.has(c._i));
     if (!sel.length) { alert("Marca con + las cartas que puedes conseguirme."); return; }
     const cabecera = `Hola Vlad, tengo estas cartas de las que buscas:\n\n`;
     const lista = sel.map(c => `${c.n}${c.s ? ` (${c.s})` : ""}` +
@@ -206,7 +207,7 @@ const rejilla = arr =>
   arr.map(c => tarjeta(c)).join("") + `</div>`;
 
 function tarjeta(c) {
-  const i = CARTAS.indexOf(c);
+  const i = c._i;
   return `<div class="card ${picked.has(i) ? "picked" : ""}">
     <div class="pick" onclick="togglePick(event,${i})">${picked.has(i) ? "✓" : "+"}</div>
     <div onclick="detalle(${i})">
@@ -215,6 +216,7 @@ function tarjeta(c) {
     ${c.id ? `<img src="${img(c.id,'normal')}" srcset="${srcset(c.id)}"
                    sizes="(max-width:600px) 46vw, 210px" alt="${esc(c.n)}" loading="lazy">`
            : `<div class="noimg"><div style="font-size:1.5rem">🃏</div><div>${esc(c.n)}</div></div>`}
+    </div>
     <div class="cfoot">
       <div class="nm">${esc(c.n)}</div>
       <div class="mt">${mana(c.mc)} ${c.s ? "· " + c.s : ""}${
