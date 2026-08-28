@@ -108,11 +108,11 @@ tr.picked td{background:rgba(45,157,120,.12)}
 .tname:hover{color:var(--accent)}
 
 /* ── Barra de intercambio ── */
-#tradebar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);
+#tradebar,.tradebar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);
           border-top:2px solid var(--ok);padding:.65rem 1.25rem;display:none;
           justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;z-index:200}
-#tradebar.show{display:flex}
-#tradebar .info{font-size:.85rem}
+#tradebar.show,.tradebar.show{display:flex}
+#tradebar .info,.tradebar .info{font-size:.85rem}
 #tradebar .info b{color:var(--ok)}
 
 /* ── Barra del constructor ── */
@@ -187,6 +187,7 @@ footer{text-align:center;color:var(--text2);font-size:.72rem;padding:2rem 1rem 1
 .wa-float:hover{ transform:scale(1.08); box-shadow:0 8px 26px rgba(37,211,102,.5) }
 .wa-float svg{ width:30px; height:30px; fill:#fff }
 body.con-deckbar .wa-float{ bottom:96px }
+.tradebar.show ~ .wa-float, #tradebar.show ~ .wa-float{ bottom:88px }
 
 /* Que el contenido no quede debajo del botón */
 footer{ padding-bottom:5rem }

@@ -18,6 +18,25 @@ const usd = v => (v === null || v === undefined) ? ""
   : "$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 let META = null, CARDS = [], ORACLE = null, ORACLE_LISTO = false;
+/* ── Envío por WhatsApp ──────────────────────────────────────────────────────
+   Las URLs wa.me aguantan unos 2.000 caracteres. Cuando la lista no cabe se
+   manda un resumen: mejor un mensaje corto y claro que uno cortado.       */
+const WHATSAPP = "573008544320";
+const WA_LIMITE = 1800;
+
+function waEnviar(texto) {
+  const url = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(texto);
+  // Un <a> real en lugar de window.open: los bloqueadores de ventanas
+  // emergentes cancelan window.open y el botón parecía no hacer nada
+  const a = document.createElement("a");
+  a.href = url;
+  a.target = "_blank";
+  a.rel = "noopener";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
 let filtradas = [], picked = new Set();
 let vista = "grid", colors = new Set(), cmode = "subset";
 let ccount = "todos", onlyFoil = false, precioMin = 0;
@@ -556,7 +575,7 @@ function eventos() {
   });
   on("pick-wa", "click", () => {
     const sel = seleccionadas();
-    if (!sel.length) return;
+    if (!sel.length) { alert("Selecciona primero las cartas que te interesan."); return; }
     const valor = sel.reduce((s, c) => s + (c.p || 0) * (c._pick || 1), 0);
     let cuerpo = sel.map(c => `${c._pick || 1} ${c.n}${c.s ? ` (${c.s})` : ""}`).join("\n");
     const cabecera = `Hola Vlad, me interesan estas cartas de tu colección:\n\n`;

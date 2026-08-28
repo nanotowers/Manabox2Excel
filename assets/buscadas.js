@@ -19,9 +19,18 @@ const WA_LIMITE = 1800;
 
 function waEnviar(texto) {
   const url = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(texto);
-  window.open(url, "_blank", "noopener");
+  // Un <a> real en lugar de window.open: los bloqueadores de ventanas
+  // emergentes cancelan window.open y el botón parecía no hacer nada
+  const a = document.createElement("a");
+  a.href = url;
+  a.target = "_blank";
+  a.rel = "noopener";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 }
 
+let picked = new Set();
 let META = null, CARTAS = [], ORACLE = null, ORACLE_LISTO = false;
 let motivo = "todas", filtradas = [];
 
@@ -92,6 +101,10 @@ function preparar() {
     [mazos.length, "Mazos afectados"], [notengo, "No tengo ninguna"]
   ].map(([v,l]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`).join("");
 
+  eventos();
+}
+
+function eventos() {
   $("f-text").addEventListener("input", render);
   $("f-mazo").addEventListener("change", render);
   $("f-sort").addEventListener("change", render);
@@ -112,15 +125,23 @@ function preparar() {
   });
   const wa = $("wa-buscadas");
   if (wa) wa.addEventListener("click", () => {
-    if (!filtradas.length) return;
-    const cabecera = `Hola Vlad, creo que tengo algunas de las cartas que buscas:\n\n`;
-    const lista = filtradas.map(c => `${c.q} ${c.n}${c.s ? ` (${c.s})` : ""}`);
+    const sel = [...picked].map(i => CARTAS[i]).filter(Boolean);
+    if (!sel.length) { alert("Marca con + las cartas que puedes conseguirme."); return; }
+    const cabecera = `Hola Vlad, tengo estas cartas de las que buscas:\n\n`;
+    const lista = sel.map(c => `${c.n}${c.s ? ` (${c.s})` : ""}` +
+                               (c.mazo ? `  [para ${c.mazo}]` : ""));
     let cuerpo = lista.join("\n");
     if ((cabecera + cuerpo).length > WA_LIMITE) {
       cuerpo = lista.slice(0, 25).join("\n") +
-               `\n... y ${lista.length - 25} más de tu lista`;
+               `\n... y ${lista.length - 25} más`;
     }
-    waEnviar(cabecera + cuerpo + `\n\n(dime cuáles te interesan y las aparto)`);
+    waEnviar(cabecera + cuerpo + `\n\n¿Te interesan?`);
+  });
+
+  const limpiar = $("sel-clear");
+  if (limpiar) limpiar.addEventListener("click", () => {
+    picked.clear(); $("sel-count").textContent = "0";
+    $("selbar").classList.remove("show"); render();
   });
 
   $("overlay").addEventListener("click", e => { if (e.target.id === "overlay") cerrar(); });
@@ -186,7 +207,9 @@ const rejilla = arr =>
 
 function tarjeta(c) {
   const i = CARTAS.indexOf(c);
-  return `<div class="card" onclick="detalle(${i})">
+  return `<div class="card ${picked.has(i) ? "picked" : ""}">
+    <div class="pick" onclick="togglePick(event,${i})">${picked.has(i) ? "✓" : "+"}</div>
+    <div onclick="detalle(${i})">
     ${c.px ? `<div class="badge" style="left:5px;right:auto;background:var(--accent)">Proxy</div>` : ""}
     ${c.q > 1 ? `<div class="badge">×${c.q}</div>` : ""}
     ${c.id ? `<img src="${img(c.id,'normal')}" srcset="${srcset(c.id)}"
@@ -201,6 +224,14 @@ function tarjeta(c) {
       </div>
     </div>
   </div>`;
+}
+
+function togglePick(ev, i) {
+  ev.stopPropagation();
+  picked.has(i) ? picked.delete(i) : picked.add(i);
+  $("sel-count").textContent = picked.size;
+  $("selbar").classList.toggle("show", picked.size > 0);
+  render();
 }
 
 function detalle(i) {
