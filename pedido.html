@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preparar pedido</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="assets/favicon.png">
+<link rel="stylesheet" href="assets/styles.css?v=202609051347">
+<style>
+  #entrada{width:100%;min-height:150px;background:var(--surface2);border:1px solid var(--border);
+           color:var(--text);border-radius:8px;padding:.7rem .8rem;font-family:inherit;
+           font-size:.85rem;line-height:1.5;resize:vertical}
+  #entrada:focus{border-color:var(--accent);outline:none}
+
+  #barra-prog{margin:1rem 0 .4rem}
+  #barra-prog .bp{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden}
+  #barra-prog .bp span{display:block;height:100%;width:0;background:var(--ok);transition:width .25s}
+  #barra-prog .txt{font-size:.8rem;color:var(--text2);margin-top:.35rem}
+  #barra-prog .txt b{color:var(--ok)}
+
+  .carpeta{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+           margin-bottom:.9rem;overflow:hidden}
+  .carpeta.lista{border-color:var(--ok);opacity:.6}
+  .ch{display:flex;justify-content:space-between;align-items:center;gap:.6rem;flex-wrap:wrap;
+      padding:.6rem .8rem;background:var(--surface2);border-bottom:1px solid var(--border)}
+  .ct{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+  .cnum{background:var(--accent);color:#fff;font-weight:700;font-size:.78rem;
+        width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+  .cnom{font-weight:700;font-size:1rem;color:#fff}
+  .ccnt{font-size:.72rem;color:var(--text2)}
+  .cmov{display:flex;gap:.3rem}
+  .btn.mini{padding:.15rem .5rem;font-size:.9rem;line-height:1.2}
+
+  .linea{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap;
+         padding:.5rem .8rem;border-top:1px solid var(--border);cursor:pointer;font-size:.85rem}
+  .linea:first-of-type{border-top:none}
+  .linea:hover{background:rgba(255,255,255,.03)}
+  .linea.hecha{opacity:.42;text-decoration:line-through}
+  .linea input{width:19px;height:19px;accent-color:var(--ok);flex:none;cursor:pointer}
+  .linea .qty{color:var(--accent);font-weight:700;min-width:26px}
+  .linea .nom{font-weight:600;flex:1;min-width:170px}
+  .linea .ed{color:var(--text2);font-size:.74rem}
+  .linea .pre{color:var(--ok);font-size:.78rem;margin-left:auto}
+
+  .mk{font-size:.64rem;text-transform:uppercase;letter-spacing:.04em;
+      padding:.1rem .4rem;border-radius:5px;background:var(--surface2);border:1px solid var(--border)}
+  .mk.foil{color:#ffd700;border-color:#7a6a00}
+  .mk.no{background:#8a2b2b;color:#fff;border-color:#8a2b2b}
+  .mk.sld{background:#7a5c00;color:#fff;border-color:#7a5c00}
+  .mk.avi{color:#e8b64c;border-color:#7a6a00}
+
+  .aviso.info{border-color:var(--border)}
+  .aviso ul{margin:.4rem 0 0 1.1rem;font-size:.8rem;line-height:1.6}
+  .aviso summary{cursor:pointer;font-size:.82rem}
+  .empty{color:var(--text2);text-align:center;padding:2rem;font-size:.88rem}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Preparar pedido</h1>
+  <p>Pega el mensaje del comprador y te digo en qué carpeta está cada carta,
+     agrupadas y en el orden de tu ruta.</p>
+  <div class="stats" id="stats"></div>
+  <div style="margin-top:1rem;display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap">
+    <a class="btn" href="index.html">← Colección</a>
+    <a class="btn" href="mazos.html">Mis mazos</a>
+  </div>
+</header>
+
+<main>
+  <div id="loader">
+    <p id="loader-txt">Cargando colección...</p>
+    <div class="bar"><div class="fill" id="loader-fill" style="width:60%"></div></div>
+  </div>
+
+  <div id="app" hidden>
+    <div class="panel">
+      <div class="fgroup" style="width:100%">
+        <label>Mensaje del comprador</label>
+        <textarea id="entrada" placeholder="1 Sol Ring (LTC) 284&#10;2 Rhystic Study&#10;..."></textarea>
+      </div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.7rem">
+        <button class="btn solid" id="analizar">Buscar en la colección</button>
+        <button class="btn" id="desmarcar">Desmarcar todo</button>
+        <button class="btn" id="copiar">Copiar respuesta</button>
+        <button class="btn" id="limpiar" style="margin-left:auto">Vaciar</button>
+      </div>
+    </div>
+
+    <div id="barra-prog" hidden>
+      <div class="bp"><span id="prog-fill"></span></div>
+      <div class="txt" id="prog-txt"></div>
+    </div>
+
+    <div id="avisos"></div>
+    <div id="resultado"></div>
+  </div>
+</main>
+
+<footer>
+  Las flechas ↑ ↓ de cada carpeta guardan tu ruta física en este navegador:
+  ordénala una vez y los siguientes pedidos salen ya en ese orden.
+</footer>
+
+<script src="assets/pedido.js?v=202608311135"></script>
+</body>
+</html>

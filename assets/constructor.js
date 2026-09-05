@@ -266,7 +266,8 @@ function tarjeta(c) {
     <div class="pick" onclick="quitar('${esc(c.n).replace(/'/g,"\\'")}')"
          style="${n ? "" : "display:none"}">−</div>
     ${n ? `<div class="badge" style="background:var(--ok)">×${n}</div>` : ""}
-    ${c.x ? `<div class="badge" style="top:auto;bottom:44px;background:#7a5c00">SLD</div>` : ""}
+    ${c.x === 2 ? `<div class="badge" style="top:auto;bottom:44px;background:#8a2b2b;color:#fff">No a la venta</div>`
+      : c.x ? `<div class="badge" style="top:auto;bottom:44px;background:#7a5c00">SLD</div>` : ""}
     <div onclick="agregar('${esc(c.n).replace(/'/g,"\\'")}')">
       ${(c.id || c.ov) ? `<img src="${img(c,'normal')}" srcset="${srcset(c)}"
               sizes="(max-width:600px) 46vw, 210px" alt="${esc(c.n)}" loading="lazy">`

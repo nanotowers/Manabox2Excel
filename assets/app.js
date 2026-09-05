@@ -81,6 +81,8 @@ async function iniciar() {
     fetch("data/buscadas.json", { method: "HEAD" })
       .then(r => { if (r.ok) mostrar("link-buscadas"); })
       .catch(() => {});
+    // La página de colección personal solo se enlaza si hay algo marcado
+    if ((META.no_venta || {}).distintas) mostrar("link-no-venta");
 
     traer("data/oracle.json").then(d => {
       ORACLE = d.oracle || {};
@@ -271,7 +273,8 @@ function aplicar() {
   const cmax = val("f-cmax") === "" ? 99 : +val("f-cmax");
 
   return CARDS.filter(c => {
-    // Las piezas de vitrina no se ofrecen a cambio: viven en su propia página
+    // Fuera del catálogo: vitrina SLD (x=1) y colección personal (x=2).
+    // Cualquier valor distinto de 0 vive en su propia página, no aquí.
     if (c.x) return false;
     if (q) {
       const enNombre = c.n.toLowerCase().includes(q);

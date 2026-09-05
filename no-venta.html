@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Galería SLD</title>
-<meta name="description" content="Secret Lair: arte exclusivo, ediciones únicas.">
-<meta property="og:title" content="Galería SLD">
-<meta property="og:image" content="https://nanotowers.github.io/Manabox2Excel/assets/banner-sld.jpg">
+<title>Colección personal</title>
+<meta name="description" content="Cartas de mi colección que no están a la venta.">
+<meta property="og:title" content="Colección personal">
+<meta property="og:image" content="https://nanotowers.github.io/Manabox2Excel/assets/banner-personal.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="assets/favicon.png">
 <link rel="stylesheet" href="assets/styles.css?v=202609051347">
@@ -14,13 +14,15 @@
 <body>
 
 <header>
-  <img class="hero" src="assets/banner-sld.jpg" alt="Galería SLD">
-  <p>Piezas de colección — no están disponibles para intercambio,
-     pero sí puedes usarlas en el constructor de mazos</p>
+  <img class="hero" src="assets/banner-personal.jpg" alt="Colección personal"
+       onerror="this.onerror=null;this.src='assets/banner.jpg'">
+  <p>Estas cartas son parte de mi colección personal: <b>no están a la venta</b>
+     ni disponibles para intercambio. Puedes verlas y usarlas en el constructor
+     de mazos, pero no aparecen en el catálogo.</p>
   <div class="stats" id="stats"></div>
   <div style="margin-top:1rem;display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap">
     <a class="btn" href="index.html">← Colección</a>
-    <a class="btn" href="no-venta.html">Colección personal</a>
+    <a class="btn" href="sld.html">Galería SLD</a>
     <a class="btn" href="mazos.html">Mis mazos</a>
     <a class="btn" href="constructor.html">Arma tu mazo</a>
   </div>
@@ -28,7 +30,7 @@
 
 <main>
   <div id="loader">
-    <p id="loader-txt">Cargando galería...</p>
+    <p id="loader-txt">Cargando colección personal...</p>
     <div class="bar"><div class="fill" id="loader-fill"></div></div>
   </div>
 
@@ -53,6 +55,10 @@
         <div class="fgroup">
           <label>Tipo</label>
           <select class="msel" id="f-tipo"><option value="">Todos</option></select>
+        </div>
+        <div class="fgroup" id="g-motivo" hidden>
+          <label>Motivo</label>
+          <select class="msel" id="f-motivo"><option value="">Todos</option></select>
         </div>
         <div class="fgroup">
           <label>Orden</label>
@@ -88,6 +94,6 @@
   <a href="https://scryfall.com" target="_blank" rel="noopener" style="color:var(--text2)">Scryfall</a>
 </footer>
 
-<script src="assets/sld.js?v=202609051347"></script>
+<script src="assets/no-venta.js?v=202608311135"></script>
 </body>
 </html>
