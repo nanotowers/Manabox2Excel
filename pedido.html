@@ -6,7 +6,7 @@
 <title>Preparar pedido</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="assets/favicon.png">
-<link rel="stylesheet" href="assets/styles.css?v=202609100537">
+<link rel="stylesheet" href="assets/styles.css?v=202609111206">
 <style>
   #entrada{width:100%;min-height:150px;background:var(--surface2);border:1px solid var(--border);
            color:var(--text);border-radius:8px;padding:.7rem .8rem;font-family:inherit;
@@ -33,23 +33,52 @@
   .btn.mini{padding:.15rem .5rem;font-size:.9rem;line-height:1.2}
 
   .linea{display:flex;align-items:flex-start;gap:.55rem;
-         padding:.5rem .8rem;border-top:1px solid var(--border);cursor:pointer;font-size:.85rem}
+         padding:.5rem .8rem;border-top:1px solid var(--border);font-size:.85rem}
   .linea:first-of-type{border-top:none}
   .linea:hover{background:rgba(255,255,255,.03)}
-  .linea.hecha{opacity:.42;text-decoration:line-through}
-  .linea input{width:19px;height:19px;accent-color:var(--ok);flex:none;cursor:pointer;margin-top:1px}
-  .linea .qty{color:var(--accent);font-weight:700;min-width:26px;flex:none}
-  .linea .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:.18rem}
-  .linea .nom{font-weight:600}
-  .linea .sub{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;
+  .linea.hecha{opacity:.42}
+  .linea.hecha .nom,.linea.hecha .sub{text-decoration:line-through}
+  .linea input[type=checkbox]{width:19px;height:19px;accent-color:var(--ok);flex:none;
+                              cursor:pointer;margin-top:1px}
+  .linea .qty{color:var(--accent);font-weight:700;flex:none;margin-right:.35rem}
+  .linea .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:.25rem}
+  .linea .nom{font-weight:600;cursor:pointer;display:block}
+  /* La identidad de color va pegada al nombre: las carpetas están ordenadas
+     por color, así que es lo primero que miras para saber dónde buscar. */
+  .linea .ci{white-space:nowrap;margin-right:.35rem;vertical-align:-.12em}
+  .linea .sub{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;cursor:pointer;
               font-size:.74rem;color:var(--text2)}
   .linea .tipo{color:var(--text);background:var(--surface2);border:1px solid var(--border);
                border-radius:5px;padding:.05rem .35rem;font-size:.68rem}
   .linea .mana{white-space:nowrap}
   .linea .cmc{font-size:.68rem;letter-spacing:.02em}
   .linea .ed{font-size:.72rem}
-  .linea .pre{color:var(--ok);font-size:.78rem;flex:none;margin-left:.4rem}
+  /* Columna de precio: total de la línea, desglose si son varias copias y el
+     enlace a SCG debajo, que es donde compruebas si el precio sigue vigente. */
+  .linea .pre{color:var(--ok);font-size:.78rem;flex:none;margin-left:.4rem;
+              display:flex;flex-direction:column;align-items:flex-end;gap:.2rem;line-height:1.25}
+  .linea .pre small{color:var(--text2);font-size:.64rem;white-space:nowrap}
+  .linea .pre .sinp{color:var(--text2);font-weight:400;font-size:.7rem}
   .linea .ms{width:1em;height:1em;vertical-align:-.14em;margin:0 1px;border-radius:50%}
+
+  /* El desplegable de edición va fuera de las etiquetas: si estuviera dentro,
+     abrirlo marcaría la carta como recogida. */
+  .linea .acc{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-top:.1rem}
+  .linea .vsel{flex:1 1 11rem;max-width:100%;min-width:0;font-family:inherit;font-size:.7rem;
+               background:var(--surface2);color:var(--text);border:1px solid var(--border);
+               border-radius:6px;padding:.2rem .3rem;cursor:pointer}
+  .linea .vsel:focus{border-color:var(--accent);outline:none}
+  .linea .scg{font-size:.62rem;padding:.1rem .35rem;text-decoration:none;
+              letter-spacing:.02em;white-space:nowrap;opacity:.75}
+  .linea .scg:hover{opacity:1}
+
+  /* Editor del mensaje de respuesta */
+  #salida{margin:1rem 0}
+  #mensaje{width:100%;min-height:190px;background:var(--surface2);border:1px solid var(--border);
+           color:var(--text);border-radius:8px;padding:.7rem .8rem;font-family:inherit;
+           font-size:.85rem;line-height:1.5;resize:vertical}
+  #mensaje:focus{border-color:var(--accent);outline:none}
+  #msg-pista{font-size:.72rem;color:#e8b64c;margin-top:.4rem;min-height:1em}
 
   .mk{font-size:.64rem;text-transform:uppercase;letter-spacing:.04em;
       padding:.1rem .4rem;border-radius:5px;background:var(--surface2);border:1px solid var(--border)}
@@ -57,6 +86,7 @@
   .mk.no{background:#8a2b2b;color:#fff;border-color:#8a2b2b}
   .mk.sld{background:#7a5c00;color:#fff;border-color:#7a5c00}
   .mk.avi{color:#e8b64c;border-color:#7a6a00}
+  .mk.ok{color:var(--ok);border-color:var(--ok)}
 
   .aviso.info{border-color:var(--border)}
   .aviso ul{margin:.4rem 0 0 1.1rem;font-size:.8rem;line-height:1.6}
@@ -92,7 +122,7 @@
       <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.7rem">
         <button class="btn solid" id="analizar">Buscar en la colección</button>
         <button class="btn" id="desmarcar">Desmarcar todo</button>
-        <button class="btn" id="copiar">Copiar respuesta</button>
+        <button class="btn" id="copiar">Preparar respuesta</button>
         <button class="btn" id="limpiar" style="margin-left:auto">Vaciar</button>
       </div>
     </div>
@@ -100,6 +130,19 @@
     <div id="barra-prog" hidden>
       <div class="bp"><span id="prog-fill"></span></div>
       <div class="txt" id="prog-txt"></div>
+    </div>
+
+    <div class="panel" id="salida" hidden>
+      <div class="fgroup" style="width:100%">
+        <label for="mensaje">Respuesta para el comprador</label>
+        <textarea id="mensaje"></textarea>
+      </div>
+      <div id="msg-pista"></div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem">
+        <button class="btn solid" id="msg-copiar">Copiar</button>
+        <button class="btn" id="msg-rehacer" title="Vuelve al texto generado automáticamente">Rehacer</button>
+        <button class="btn" id="msg-cerrar" style="margin-left:auto">Cerrar</button>
+      </div>
     </div>
 
     <div id="avisos"></div>
@@ -110,8 +153,9 @@
 <footer>
   Las flechas ↑ ↓ de cada carpeta guardan tu ruta física en este navegador:
   ordénala una vez y los siguientes pedidos salen ya en ese orden.
+  El desplegable de cada carta cambia la edición que vas a servir y también se recuerda.
 </footer>
 
-<script src="assets/pedido.js?v=202608311135"></script>
+<script src="assets/pedido.js?v=202609111206"></script>
 </body>
 </html>
