@@ -6,7 +6,7 @@
 <title>Preparar pedido</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="assets/favicon.png">
-<link rel="stylesheet" href="assets/styles.css?v=202609051347">
+<link rel="stylesheet" href="assets/styles.css?v=202609100537">
 <style>
   #entrada{width:100%;min-height:150px;background:var(--surface2);border:1px solid var(--border);
            color:var(--text);border-radius:8px;padding:.7rem .8rem;font-family:inherit;
@@ -32,16 +32,24 @@
   .cmov{display:flex;gap:.3rem}
   .btn.mini{padding:.15rem .5rem;font-size:.9rem;line-height:1.2}
 
-  .linea{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap;
+  .linea{display:flex;align-items:flex-start;gap:.55rem;
          padding:.5rem .8rem;border-top:1px solid var(--border);cursor:pointer;font-size:.85rem}
   .linea:first-of-type{border-top:none}
   .linea:hover{background:rgba(255,255,255,.03)}
   .linea.hecha{opacity:.42;text-decoration:line-through}
-  .linea input{width:19px;height:19px;accent-color:var(--ok);flex:none;cursor:pointer}
-  .linea .qty{color:var(--accent);font-weight:700;min-width:26px}
-  .linea .nom{font-weight:600;flex:1;min-width:170px}
-  .linea .ed{color:var(--text2);font-size:.74rem}
-  .linea .pre{color:var(--ok);font-size:.78rem;margin-left:auto}
+  .linea input{width:19px;height:19px;accent-color:var(--ok);flex:none;cursor:pointer;margin-top:1px}
+  .linea .qty{color:var(--accent);font-weight:700;min-width:26px;flex:none}
+  .linea .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:.18rem}
+  .linea .nom{font-weight:600}
+  .linea .sub{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;
+              font-size:.74rem;color:var(--text2)}
+  .linea .tipo{color:var(--text);background:var(--surface2);border:1px solid var(--border);
+               border-radius:5px;padding:.05rem .35rem;font-size:.68rem}
+  .linea .mana{white-space:nowrap}
+  .linea .cmc{font-size:.68rem;letter-spacing:.02em}
+  .linea .ed{font-size:.72rem}
+  .linea .pre{color:var(--ok);font-size:.78rem;flex:none;margin-left:.4rem}
+  .linea .ms{width:1em;height:1em;vertical-align:-.14em;margin:0 1px;border-radius:50%}
 
   .mk{font-size:.64rem;text-transform:uppercase;letter-spacing:.04em;
       padding:.1rem .4rem;border-radius:5px;background:var(--surface2);border:1px solid var(--border)}

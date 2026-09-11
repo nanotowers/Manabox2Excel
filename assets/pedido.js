@@ -17,6 +17,19 @@ const $ = id => document.getElementById(id);
 const esc = t => String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 const usd = v => (v === null || v === undefined || !v) ? ""
   : "$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const RE_SIMBOLO = /\{[^}]+\}/g;
+
+/* Cambia {2}{B} por las imágenes de símbolos que descarga el generador. */
+function mana(txt) {
+  if (!txt) return "";
+  if (!META || !META.simbolos) return esc(txt);
+  return esc(txt).replace(RE_SIMBOLO, s => {
+    const a = META.simbolos[s];
+    if (!a) return s;
+    return `<img class="ms" src="assets/simbolos/${a}" alt="${s}" width="16" height="16" ` +
+           `style="width:1em;height:1em;vertical-align:-.14em;display:inline-block" loading="lazy">`;
+  });
+}
 
 const K_TXT = "pedido:texto", K_RUTA = "pedido:ruta", K_HECHAS = "pedido:hechas";
 const guarda = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
@@ -46,6 +59,7 @@ async function iniciar() {
     const doc = await traer("data/cards.json");
     const I = {}; doc.cols.forEach((c, i) => I[c] = i);
     const sets = META.sets, binders = META.binders.map(b => b[0]);
+    const tipos = META.tipos || [];
 
     doc.rows.forEach((r, i) => {
       const bs = r[I.b];
@@ -57,6 +71,10 @@ async function iniciar() {
         cn: r[I.cn],
         f:  r[I.f],
         q:  r[I.q],
+        t:  tipos[r[I.t]] || "",
+        mc: r[I.mc] || "",
+        c:  r[I.cmc] === null || r[I.cmc] === undefined ? "" : r[I.cmc],
+        nv: I.nv === undefined ? "" : (r[I.nv] || ""),
         p:  r[I.p] === undefined ? null : r[I.p],
         x:  I.x === undefined ? 0 : (r[I.x] || 0),
         b:  (Array.isArray(bs) ? bs : [bs]).map(k => binders[k]).filter(Boolean),
@@ -264,18 +282,32 @@ function fila(l) {
   const otras = c.b.length > 1 ? ` · también en ${esc(c.b.slice(1).join(", "))}` : "";
   const marcas = [
     c.f ? `<span class="mk foil">✦ Foil</span>` : "",
-    c.x === 2 ? `<span class="mk no">No a la venta</span>` : "",
+    c.x === 2 ? `<span class="mk no">No a la venta${c.nv ? ": " + esc(c.nv) : ""}</span>` : "",
     c.x === 1 ? `<span class="mk sld">Vitrina</span>` : "",
     l.pedidas > c.q ? `<span class="mk no">Solo tienes ${c.q}</span>` : "",
     l.avisoEdicion ? `<span class="mk avi">${esc(l.avisoEdicion)}</span>` : "",
     l.alternativas.length ? `<span class="mk avi">${l.alternativas.length} versión(es) más</span>` : "",
   ].filter(Boolean).join("");
+
+  // El coste va en dos formas a propósito: los símbolos para reconocer la
+  // carta de un vistazo y el CMC para no tener que sumarlos mentalmente.
+  const coste = [
+    c.mc ? `<span class="mana">${mana(c.mc)}</span>` : "",
+    c.c === "" ? "" : `<span class="cmc">CMC ${c.c}</span>`,
+  ].filter(Boolean).join(" ");
+
   return `<label class="linea${hecha ? " hecha" : ""}">
     <input type="checkbox" data-id="${c.i}"${hecha ? " checked" : ""}>
     <span class="qty">${l.pedidas}×</span>
-    <span class="nom">${esc(c.n)}</span>
-    <span class="ed">${esc(c.s)}${c.cn ? " #" + esc(c.cn) : ""}${otras}</span>
-    ${marcas}
+    <span class="tx">
+      <span class="nom">${esc(c.n)}</span>
+      <span class="sub">
+        ${c.t ? `<span class="tipo">${esc(c.t)}</span>` : ""}
+        ${coste}
+        <span class="ed">${esc(c.s)}${c.cn ? " #" + esc(c.cn) : ""}${otras}</span>
+        ${marcas}
+      </span>
+    </span>
     <span class="pre">${usd(c.p)}</span>
   </label>`;
 }

@@ -81,8 +81,6 @@ async function iniciar() {
     fetch("data/buscadas.json", { method: "HEAD" })
       .then(r => { if (r.ok) mostrar("link-buscadas"); })
       .catch(() => {});
-    // La página de colección personal solo se enlaza si hay algo marcado
-    if ((META.no_venta || {}).distintas) mostrar("link-no-venta");
 
     traer("data/oracle.json").then(d => {
       ORACLE = d.oracle || {};
@@ -215,9 +213,12 @@ function prepararControles() {
     .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([c, nm, n]) => [c, `${c} (${n})`]), "Todas");
 
-  if (META.binders.length) {
+  // Solo las carpetas que aportan cartas al catálogo: las que están fuera de
+  // la venta llegan con contador 0 y ofrecerlas daría un filtro vacío.
+  const bindersConCartas = META.binders.filter(([, n]) => n > 0);
+  if (bindersConCartas.length) {
     $("g-binder").hidden = false;
-    opciones("f-binder", META.binders.map(([b, n]) => [b, `${b} (${n})`]), "Todas");
+    opciones("f-binder", bindersConCartas.map(([b, n]) => [b, `${b} (${n})`]), "Todas");
   }
   if (META.condiciones.length) {
     $("g-cond").hidden = false;
